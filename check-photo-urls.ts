@@ -28,7 +28,7 @@ async function checkPhotoUrls() {
   console.log("Recent photo URLs:");
   console.log("==================");
   
-  photos.forEach((photo) => {
+  photos.forEach((photo: any) => {
     const storageType = photo.url?.includes("cloudinary") 
       ? "Cloudinary" 
       : photo.url?.includes("ibb.co") 
