@@ -1,0 +1,94 @@
+.pageContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+.header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-style: italic;
+}
+
+.mapContainerWrapper {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  background: var(--bg-polaroid);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  border: var(--border-delicate);
+}
+
+.mapContainer {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 600px;
+  background: var(--bg-polaroid);
+  padding: 2rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  border: var(--border-delicate);
+  text-align: center;
+  position: relative;
+}
+
+.emptyState h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  max-width: 400px;
+  font-style: italic;
+}
+
+/* Custom Leaflet popup styling to match vintage theme */
+:global(.leaflet-popup-content-wrapper) {
+  background: var(--bg-polaroid) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: 0 !important;
+}
+
+:global(.leaflet-popup-content) {
+  margin: 0 !important;
+  font-family: var(--font-body) !important;
+}
+
+:global(.leaflet-popup-tip) {
+  background: var(--bg-polaroid) !important;
+}

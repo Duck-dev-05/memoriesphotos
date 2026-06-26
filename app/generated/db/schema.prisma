@@ -1,0 +1,184 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../app/generated/db"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String
+  email               String               @unique
+  passwordHash        String?
+  image               String?
+  createdAt           DateTime             @default(now())
+  albums              Album[]
+  photos              Photo[]
+  people              Person[]
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
+  memoryStories       MemoryStory[]
+  stories             Story[]
+}
+
+model Album {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  coverImage  String?
+  createdAt   DateTime  @default(now())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos      Photo[]
+  parentId    String?
+  parent      Album?    @relation("AlbumToAlbum", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Album[]   @relation("AlbumToAlbum")
+  deletedAt   DateTime?
+
+  // Sharing fields
+  isPublic        Boolean @default(false)
+  shareToken      String? @unique
+  isCollaborative Boolean @default(false)
+}
+
+model Photo {
+  id          String    @id @default(cuid())
+  url         String?
+  imageData   String?
+  altText     String
+  description String?
+  createdAt   DateTime  @default(now())
+  isFavorite  Boolean   @default(false)
+  dateTaken   DateTime?
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albumId     String?
+  album       Album?    @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  storyId     String?
+  story       Story?    @relation(fields: [storyId], references: [id], onDelete: SetNull)
+  deletedAt   DateTime?
+
+  // Sharing fields
+  isPublic   Boolean @default(false)
+  shareToken String? @unique
+
+  // EXIF Metadata
+  cameraMake   String?
+  cameraModel  String?
+  lensModel    String?
+  focalLength  Float?
+  fNumber      Float?
+  iso          Int?
+  exposureTime String?
+
+  // Location Data
+  latitude     Float?
+  longitude    Float?
+  locationName String?
+
+  // File Properties
+  width    Int?
+  height   Int?
+  fileSize Int?
+
+  faces FaceTag[]
+  tags  Tag[]
+}
+
+model Person {
+  id         String   @id @default(cuid())
+  name       String
+  avatarUrl  String?
+  phone      String?
+  email      String?
+  socialLink String?
+  createdAt  DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Base 128D Face Descriptor from avatar (e.g. Google Contacts)
+  baseDescriptor String?
+
+  faces FaceTag[]
+}
+
+model FaceTag {
+  id       String @id @default(cuid())
+  photoId  String
+  photo    Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  personId String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  // Bounding box (percentages: 0.0 to 1.0)
+  x      Float?
+  y      Float?
+  width  Float?
+  height Float?
+
+  // 128D Face Descriptor stored as JSON string
+  descriptor String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([photoId, personId])
+}
+
+model Tag {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  photos Photo[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model MemoryStory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayMonth  String // e.g. "06-05"
+  year      Int // e.g. 2023
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, dayMonth, year])
+}
+
+model Story {
+  id         String   @id @default(cuid())
+  title      String
+  content    String?
+  coverImage String?
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos     Photo[]
+
+  // Sharing fields
+  isPublic        Boolean @default(false)
+  shareToken      String? @unique
+  isCollaborative Boolean @default(false)
+}

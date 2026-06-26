@@ -1,0 +1,15 @@
+.container { padding: 4rem 2rem; max-width: 1200px; margin: 0 auto; }
+.header { text-align: center; margin-bottom: 3rem; animation: fadeUp 0.8s ease-out; }
+.title { font-family: var(--font-heading); font-size: clamp(2.5rem, 5vw, 4rem); color: var(--text-primary); margin-bottom: 0.5rem; }
+.subtitle { font-family: var(--font-body); color: var(--text-secondary); font-size: 1.2rem; font-style: italic; }
+.empty { text-align: center; padding: 4rem; color: var(--text-secondary); font-family: var(--font-body); font-size: 1.2rem; background: var(--bg-tertiary); border: 1px dashed var(--border-color); border-radius: var(--radius-md); }
+.tagGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2.5rem; }
+.tagCard { text-decoration: none; color: inherit; transition: transform 0.3s; display: block; }
+.tagCard:hover { transform: scale(1.05) translateY(-5px); z-index: 10; }
+.tagName { font-family: var(--font-heading); font-size: 1.8rem; font-weight: bold; margin-bottom: 1rem; }
+.tagCount { font-size: 1.5rem; color: var(--text-secondary); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
