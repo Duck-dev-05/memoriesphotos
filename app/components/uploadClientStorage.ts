@@ -8,6 +8,13 @@ type CloudSignBody = {
 
 const DEFAULT_LOCAL_UPLOAD_LIMIT_BYTES = 25 * 1024 * 1024;
 
+function isHeicFile(file: File): boolean {
+  return file.type === 'image/heic' ||
+         file.type === 'image/heif' ||
+         file.name.toLowerCase().endsWith('.heic') ||
+         file.name.toLowerCase().endsWith('.heif');
+}
+
 function getLocalUploadLimitBytes() {
   const configuredMb = Number(process.env.NEXT_PUBLIC_LOCAL_UPLOAD_LIMIT_MB);
   return Number.isFinite(configuredMb) && configuredMb > 0
@@ -57,6 +64,12 @@ async function uploadFileToCloud(file: File, signBody?: CloudSignBody): Promise<
     return getOptimizedCloudinaryUrl(cloudinaryData.secure_url, file);
   }
 
+  // For HEIC files, only use Cloudinary (no ImgBB fallback since ImgBB doesn't handle HEIC)
+  if (isHeicFile(file)) {
+    throw new Error("HEIC files require Cloudinary. Cloudinary upload failed.");
+  }
+
+  // For normal files, fall back to ImgBB
   const imgbbApiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
   if (!imgbbApiKey || !file.type.startsWith("image/")) {
     throw new Error("Cloud upload failed");

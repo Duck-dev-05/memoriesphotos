@@ -238,7 +238,50 @@ async function saveUploadedFileBufferLocally(buffer: Buffer, file: File, filenam
   return saveBufferToWritableStorage(buffer, filename, file.type);
 }
 
+function isHeicFile(filename: string, contentType?: string): boolean {
+  return contentType === 'image/heic' ||
+         contentType === 'image/heif' ||
+         filename.toLowerCase().endsWith('.heic') ||
+         filename.toLowerCase().endsWith('.heif');
+}
+
 async function uploadBufferToCloud(buffer: Buffer, filename: string, contentType?: string): Promise<string | null> {
+  // For HEIC files, use Cloudinary first (ImgBB doesn't support HEIC)
+  if (isHeicFile(filename, contentType)) {
+    const hasCloudinaryConfig =
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET;
+
+    if (hasCloudinaryConfig) {
+      try {
+        const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "memoriesphotos",
+              resource_type: "auto",
+              public_id: path.parse(filename).name,
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else if (result) resolve(result);
+              else reject(new Error("Cloudinary upload returned no result"));
+            }
+          );
+          uploadStream.end(buffer);
+        });
+
+        return getOptimizedCloudinaryUrl(uploadResult.secure_url, contentType);
+      } catch (error) {
+        console.warn("Cloudinary upload failed for HEIC file", error);
+      }
+    }
+
+    // HEIC files require Cloudinary, no fallback
+    return null;
+  }
+
+  // For normal files, use ImgBB first, then Cloudinary fallback
   const apiKey = process.env.IMGBB_API_KEY || process.env.NEXT_PUBLIC_IMGBB_API_KEY;
   if (apiKey && contentType?.startsWith("image/")) {
     try {
