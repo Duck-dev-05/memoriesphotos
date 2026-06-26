@@ -64,12 +64,7 @@ async function uploadFileToCloud(file: File, signBody?: CloudSignBody): Promise<
     return getOptimizedCloudinaryUrl(cloudinaryData.secure_url, file);
   }
 
-  // For HEIC files, only use Cloudinary (no ImgBB fallback since ImgBB doesn't handle HEIC)
-  if (isHeicFile(file)) {
-    throw new Error("HEIC files require Cloudinary. Cloudinary upload failed.");
-  }
-
-  // For normal files, fall back to ImgBB
+  // Fall back to ImgBB for all files including HEIC
   const imgbbApiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
   if (!imgbbApiKey || !file.type.startsWith("image/")) {
     throw new Error("Cloud upload failed");

@@ -238,50 +238,8 @@ async function saveUploadedFileBufferLocally(buffer: Buffer, file: File, filenam
   return saveBufferToWritableStorage(buffer, filename, file.type);
 }
 
-function isHeicFile(filename: string, contentType?: string): boolean {
-  return contentType === 'image/heic' ||
-         contentType === 'image/heif' ||
-         filename.toLowerCase().endsWith('.heic') ||
-         filename.toLowerCase().endsWith('.heif');
-}
-
 async function uploadBufferToCloud(buffer: Buffer, filename: string, contentType?: string): Promise<string | null> {
-  // For HEIC files, use Cloudinary first (ImgBB doesn't support HEIC)
-  if (isHeicFile(filename, contentType)) {
-    const hasCloudinaryConfig =
-      process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET;
-
-    if (hasCloudinaryConfig) {
-      try {
-        const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: "memoriesphotos",
-              resource_type: "auto",
-              public_id: path.parse(filename).name,
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else if (result) resolve(result);
-              else reject(new Error("Cloudinary upload returned no result"));
-            }
-          );
-          uploadStream.end(buffer);
-        });
-
-        return getOptimizedCloudinaryUrl(uploadResult.secure_url, contentType);
-      } catch (error) {
-        console.warn("Cloudinary upload failed for HEIC file", error);
-      }
-    }
-
-    // HEIC files require Cloudinary, no fallback
-    return null;
-  }
-
-  // For normal files, use ImgBB first, then Cloudinary fallback
+  // Use ImgBB first for all files including HEIC
   const apiKey = process.env.IMGBB_API_KEY || process.env.NEXT_PUBLIC_IMGBB_API_KEY;
   if (apiKey && contentType?.startsWith("image/")) {
     try {
@@ -303,6 +261,7 @@ async function uploadBufferToCloud(buffer: Buffer, filename: string, contentType
     }
   }
 
+  // Fall back to Cloudinary
   const hasCloudinaryConfig =
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY &&
@@ -439,7 +398,14 @@ export async function createAlbum(formData: FormData) {
     const coverFile = formData.get("coverImage") as File | null;
     if (coverFile && coverFile.size > 0) {
       const buffer = Buffer.from(await coverFile.arrayBuffer());
-      coverImageUrl = await saveUploadedFileBufferLocally(buffer, coverFile, "cover");
+      // Try cloud upload first for cover images to avoid local storage issues
+      const cloudUrl = await uploadBufferToCloud(buffer, coverFile.name, coverFile.type);
+      if (cloudUrl) {
+        coverImageUrl = cloudUrl;
+      } else {
+        // Fallback to local storage
+        coverImageUrl = await saveUploadedFileBufferLocally(buffer, coverFile, "cover");
+      }
     }
   }
 
@@ -474,7 +440,14 @@ export async function updateAlbum(id: string, formData: FormData) {
 
   if (coverFile && coverFile.size > 0) {
     const buffer = Buffer.from(await coverFile.arrayBuffer());
-    coverImageUrl = await saveUploadedFileBufferLocally(buffer, coverFile, "cover");
+    // Try cloud upload first for cover images to avoid local storage issues
+    const cloudUrl = await uploadBufferToCloud(buffer, coverFile.name, coverFile.type);
+    if (cloudUrl) {
+      coverImageUrl = cloudUrl;
+    } else {
+      // Fallback to local storage
+      coverImageUrl = await saveUploadedFileBufferLocally(buffer, coverFile, "cover");
+    }
   }
 
   await prisma.album.update({
