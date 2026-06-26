@@ -310,12 +310,12 @@ export default function DragDropUploader({
       onDrop={handleDrop}
       style={{ position: 'relative', display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100%' }}
     >
-      <input 
-        type="file" 
-        id="album-upload-input" 
-        multiple 
-        accept="image/*,video/*" 
-        style={{ display: 'none' }} 
+      <input
+        type="file"
+        id="album-upload-input"
+        multiple
+        accept="image/*,video/*,.heic,.heif"
+        style={{ display: 'none' }}
         onChange={handleFileInput}
       />
       {children}

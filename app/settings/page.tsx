@@ -51,7 +51,7 @@ export default async function SettingsPage() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Ảnh đại diện</label>
-              <input type="file" name="avatar" accept="image/*" />
+              <input type="file" name="avatar" accept="image/*,.heic,.heif" />
             </div>
           </div>
           <div>

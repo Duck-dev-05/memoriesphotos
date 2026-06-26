@@ -75,7 +75,7 @@ export default function UploadPage() {
                 <div className="fileInputWrapper">
                   <input
                     type="file"
-                    accept="image/*,video/*"
+                    accept="image/*,video/*,.heic,.heif"
                     onChange={e => setCoverImage(e.target.files?.[0] || null)}
                     className="sleekFileInput"
                   />
