@@ -12,6 +12,7 @@ export async function GET() {
         description: true,
         coverImage: true,
         createdAt: true,
+        parentId: true,
       },
     });
     return NextResponse.json(albums);
