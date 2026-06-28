@@ -22,3 +22,58 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch photos" }, { status: 500 });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const data = await request.json();
+    if (!Array.isArray(data)) {
+      return NextResponse.json({ error: "Invalid data format, expected array" }, { status: 400 });
+    }
+
+    const results = [];
+    for (const item of data) {
+      if (!item.altText && !item.url) continue;
+
+      let photo;
+      try {
+        if (item.remoteId) {
+          photo = await prisma.photo.update({
+            where: { id: item.remoteId },
+            data: {
+              url: item.url,
+              altText: item.altText || "Unknown Photo",
+              description: item.description,
+              dateTaken: item.dateTaken ? new Date(item.dateTaken) : null,
+              locationName: item.locationName,
+              albumId: item.albumId,
+            }
+          });
+        } else {
+          photo = await prisma.photo.create({
+            data: {
+              url: item.url,
+              altText: item.altText || "Unknown Photo",
+              description: item.description,
+              dateTaken: item.dateTaken ? new Date(item.dateTaken) : new Date(),
+              locationName: item.locationName,
+              albumId: item.albumId,
+              createdAt: new Date(),
+            }
+          });
+        }
+        
+        results.push({
+          localId: item.localId,
+          remoteId: photo.id
+        });
+      } catch (err) {
+        console.error(`Failed to process photo ${item.altText}:`, err);
+      }
+    }
+
+    return NextResponse.json(results);
+  } catch (error) {
+    console.error("Error syncing photos (POST):", error);
+    return NextResponse.json({ error: "Failed to sync photos" }, { status: 500 });
+  }
+}
