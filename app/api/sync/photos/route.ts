@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +72,10 @@ export async function POST(request: Request) {
       }
     }
 
+    revalidatePath("/");
+    revalidatePath("/memories");
+    revalidatePath("/albums");
+    
     return NextResponse.json(results);
   } catch (error) {
     console.error("Error syncing photos (POST):", error);

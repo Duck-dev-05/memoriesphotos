@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
       }
     }
 
+    revalidatePath("/albums");
+    revalidatePath("/");
+    
     return NextResponse.json(results);
   } catch (error) {
     console.error("Error syncing albums (POST):", error);
