@@ -8,10 +8,13 @@ import { useRouter, useParams, usePathname } from "next/navigation";
 type UploadItem = {
   id: string;
   name: string;
-  file: File;
+  type: 'file' | 'folder';
+  file?: File;
+  folderFiles?: File[];
   targetAlbumId?: string;
   targetStoryId?: string;
   status: 'pending' | 'uploading' | 'success' | 'error';
+  progress?: { uploaded: number, total: number };
 };
 
 function isVideoFile(file: File) {
@@ -87,10 +90,8 @@ export default function DragDropUploader({
 
     if (e.dataTransfer.items) {
       const items = Array.from(e.dataTransfer.items);
-      let allUploads: { file: File, targetAlbumId?: string, targetStoryId?: string }[] = [];
+      let allUploads: UploadItem[] = [];
       
-      // We must synchronously extract all entries BEFORE any await, 
-      // because browsers clear the DataTransfer object after the first await!
       const entries: any[] = [];
       for (const item of items) {
         if (item.kind === 'file') {
@@ -99,10 +100,9 @@ export default function DragDropUploader({
         }
       }
 
-      // Now we can safely process the entries sequentially
       for (const entry of entries) {
-        const results = await processTopLevelEntry(entry);
-        allUploads = [...allUploads, ...results];
+        const result = await processTopLevelEntry(entry);
+        if (result) allUploads.push(result);
       }
 
       if (allUploads.length > 0) {
@@ -117,40 +117,39 @@ export default function DragDropUploader({
     });
   }
 
-  async function processTopLevelEntry(entry: any): Promise<{ file: File, targetAlbumId?: string, targetStoryId?: string }[]> {
+  async function processTopLevelEntry(entry: any): Promise<UploadItem | null> {
     if (entry.isFile) {
       const file = await getFileFromEntry(entry);
       if (file && (isImageFile(file) || isVideoFile(file))) {
-        return [{ file, targetAlbumId: albumId, targetStoryId: storyId }];
+        return {
+          id: Math.random().toString(36).substring(7),
+          name: file.name,
+          type: 'file',
+          file: file,
+          targetAlbumId: albumId,
+          targetStoryId: storyId,
+          status: 'pending'
+        };
       }
-      return [];
+      return null;
     } else if (entry.isDirectory) {
-      // Create a new album for the dropped folder
-      const formData = new FormData();
-      formData.append("name", entry.name);
-      formData.append("description", "Tải lên từ thư mục");
-      if (albumId) {
-        formData.append("parentId", albumId);
-      }
+      const files: File[] = [];
+      await traverseFileTree(entry, '', files);
       
-      try {
-        const newAlbum = await createAlbum(formData);
-        const targetAlbumId = newAlbum.id;
-        
-        // Traverse all images inside this folder
-        const files: File[] = [];
-        await traverseFileTree(entry, '', files);
-        
-        // Refresh router so the new album appears in the sidebar right away
-        router.refresh();
+      if (files.length === 0) return null;
 
-        return files.map(f => ({ file: f, targetAlbumId, targetStoryId: storyId }));
-      } catch (err) {
-        console.error("Failed to create album for folder", entry.name, err);
-        return [];
-      }
+      return {
+        id: Math.random().toString(36).substring(7),
+        name: entry.name,
+        type: 'folder',
+        folderFiles: files,
+        targetAlbumId: albumId,
+        targetStoryId: storyId,
+        status: 'pending',
+        progress: { uploaded: 0, total: files.length }
+      };
     }
-    return [];
+    return null;
   }
 
   async function traverseFileTree(item: any, path: string = '', filesToUpload: File[]) {
@@ -185,87 +184,50 @@ export default function DragDropUploader({
     });
   }
 
-  async function startUpload(uploads: { file: File, targetAlbumId?: string, targetStoryId?: string }[]) {
-    const newItems: UploadItem[] = uploads.map(u => ({
-      id: Math.random().toString(36).substring(7),
-      name: u.file.name,
-      file: u.file,
-      targetAlbumId: u.targetAlbumId,
-      targetStoryId: u.targetStoryId,
-      status: 'pending'
-    }));
-
+  async function startUpload(newItems: UploadItem[]) {
     setUploadItems(prev => [...prev, ...newItems]);
     setShowManager(true);
     setIsMinimized(false);
 
-    // Process uploads sequentially
     const videoSizeLimit = getVideoSizeLimitBytes();
-    const largeVideos = newItems.filter(item => isVideoFile(item.file) && item.file.size > videoSizeLimit);
-    if (largeVideos.length > 0) {
-      const limitMB = videoSizeLimit / (1024 * 1024);
-      alert(`Có ${largeVideos.length} video vượt quá giới hạn ${limitMB}MB và sẽ bị lỗi/bỏ qua.`);
-    }
 
     for (const item of newItems) {
-      if (isVideoFile(item.file) && item.file.size > videoSizeLimit) {
-        setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'error' } : p));
-        continue;
-      }
-
       setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'uploading' } : p));
       
       try {
-        // 1. Extract EXIF data if image
-        let exifDetails: any = {};
-        if (!isVideoFile(item.file)) {
-          try {
-            const exifr = (await import('exifr')).default;
-            const exifData = await exifr.parse(item.file, {
-              tiff: true,
-              exif: true,
-              gps: true,
-              reviveValues: true,
-            });
-
-            if (exifData) {
-              exifDetails = {
-                dateTaken: exifData.DateTimeOriginal ? new Date(exifData.DateTimeOriginal) : (exifData.CreateDate ? new Date(exifData.CreateDate) : null),
-                cameraMake: (exifData.Make || exifData.make) ? String(exifData.Make || exifData.make).trim() : null,
-                cameraModel: (exifData.Model || exifData.model) ? String(exifData.Model || exifData.model).trim() : null,
-                lensModel: (exifData.LensModel || exifData.Lens || exifData.lens) ? String(exifData.LensModel || exifData.Lens || exifData.lens).trim() : null,
-                focalLength: (exifData.FocalLength || exifData.focalLength) ? Number(exifData.FocalLength || exifData.focalLength) : null,
-                fNumber: (exifData.FNumber || exifData.fNumber || exifData.ApertureValue) ? Number(exifData.FNumber || exifData.fNumber || exifData.ApertureValue) : null,
-                iso: (exifData.ISO || exifData.iso) ? Number(exifData.ISO || exifData.iso) : null,
-                exposureTime: (exifData.ExposureTime || exifData.exposureTime)
-                  ? ((exifData.ExposureTime || exifData.exposureTime) < 1 ? `1/${Math.round(1 / (exifData.ExposureTime || exifData.exposureTime))}` : String(exifData.ExposureTime || exifData.exposureTime))
-                  : null,
-                latitude: exifData.latitude ? Number(exifData.latitude) : null,
-                longitude: exifData.longitude ? Number(exifData.longitude) : null,
-                width: (exifData.ImageWidth || exifData.ExifImageWidth) ? Number(exifData.ImageWidth || exifData.ExifImageWidth) : null,
-                height: (exifData.ImageHeight || exifData.ExifImageHeight) ? Number(exifData.ImageHeight || exifData.ExifImageHeight) : null,
-              };
-            }
-          } catch (e) {
-            console.warn("Failed to parse EXIF for", item.name, e);
+        if (item.type === 'file' && item.file) {
+          if (isVideoFile(item.file) && item.file.size > videoSizeLimit) {
+            setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'error' } : p));
+            continue;
           }
+          await uploadSingleFile(item.file, item.targetAlbumId, item.targetStoryId);
+          setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'success' } : p));
+        } else if (item.type === 'folder' && item.folderFiles) {
+          // Create Album
+          const formData = new FormData();
+          formData.append("name", item.name);
+          formData.append("description", "Tải lên từ thư mục");
+          if (item.targetAlbumId) {
+            formData.append("parentId", item.targetAlbumId);
+          }
+          const newAlbum = await createAlbum(formData);
+          const folderAlbumId = newAlbum.id;
+
+          let uploadedCount = 0;
+          for (const file of item.folderFiles) {
+            if (isVideoFile(file) && file.size > videoSizeLimit) {
+              continue;
+            }
+            try {
+              await uploadSingleFile(file, folderAlbumId, item.targetStoryId);
+              uploadedCount++;
+              setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, progress: { uploaded: uploadedCount, total: item.folderFiles!.length } } : p));
+            } catch(e) {
+              console.error("Failed to upload folder file", file.name, e);
+            }
+          }
+          setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'success', progress: { uploaded: uploadedCount, total: item.folderFiles!.length } } : p));
         }
-
-        // 2. Save locally first so the app can show the upload immediately.
-        // Cloud upload continues in the background as best effort.
-        const uploadUrl = await uploadFileLocalFirst(item.file);
-
-        // 3. Save Record via Server Action
-          await saveUploadedPhotoRecord({
-          url: uploadUrl,
-          altText: item.name.replace(/\.[^/.]+$/, ""),
-          description: "",
-          albumId: item.targetAlbumId,
-          storyId: item.targetStoryId,
-          exifData: exifDetails
-        });
-        
-        setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'success' } : p));
       } catch (err) {
         console.error("Upload failed for", item.name, err);
         setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'error' } : p));
@@ -275,19 +237,60 @@ export default function DragDropUploader({
     router.refresh();
   }
 
+  async function uploadSingleFile(file: File, albumId?: string, storyId?: string) {
+    let exifDetails: any = {};
+    if (!isVideoFile(file)) {
+      try {
+        const exifr = (await import('exifr')).default;
+        const exifData = await exifr.parse(file, {
+          tiff: true, exif: true, gps: true, reviveValues: true,
+        });
+
+        if (exifData) {
+          exifDetails = {
+            dateTaken: exifData.DateTimeOriginal ? new Date(exifData.DateTimeOriginal) : (exifData.CreateDate ? new Date(exifData.CreateDate) : null),
+            cameraMake: (exifData.Make || exifData.make) ? String(exifData.Make || exifData.make).trim() : null,
+            cameraModel: (exifData.Model || exifData.model) ? String(exifData.Model || exifData.model).trim() : null,
+            lensModel: (exifData.LensModel || exifData.Lens || exifData.lens) ? String(exifData.LensModel || exifData.Lens || exifData.lens).trim() : null,
+            focalLength: (exifData.FocalLength || exifData.focalLength) ? Number(exifData.FocalLength || exifData.focalLength) : null,
+            fNumber: (exifData.FNumber || exifData.fNumber || exifData.ApertureValue) ? Number(exifData.FNumber || exifData.fNumber || exifData.ApertureValue) : null,
+            iso: (exifData.ISO || exifData.iso) ? Number(exifData.ISO || exifData.iso) : null,
+            exposureTime: (exifData.ExposureTime || exifData.exposureTime)
+              ? ((exifData.ExposureTime || exifData.exposureTime) < 1 ? `1/${Math.round(1 / (exifData.ExposureTime || exifData.exposureTime))}` : String(exifData.ExposureTime || exifData.exposureTime))
+              : null,
+            latitude: exifData.latitude ? Number(exifData.latitude) : null,
+            longitude: exifData.longitude ? Number(exifData.longitude) : null,
+            width: (exifData.ImageWidth || exifData.ExifImageWidth) ? Number(exifData.ImageWidth || exifData.ExifImageWidth) : null,
+            height: (exifData.ImageHeight || exifData.ExifImageHeight) ? Number(exifData.ImageHeight || exifData.ExifImageHeight) : null,
+          };
+        }
+      } catch (e) {
+        console.warn("Failed to parse EXIF for", file.name, e);
+      }
+    }
+
+    const uploadUrl = await uploadFileLocalFirst(file);
+    await saveUploadedPhotoRecord({
+      url: uploadUrl,
+      altText: file.name.replace(/\.[^/.]+$/, ""),
+      description: "",
+      albumId: albumId,
+      storyId: storyId,
+      exifData: exifDetails
+    });
+  }
+
   const totalItems = uploadItems.length;
   const completedItems = uploadItems.filter(i => i.status === 'success').length;
   const errorItems = uploadItems.filter(i => i.status === 'error').length;
   const isAllDone = totalItems > 0 && (completedItems + errorItems === totalItems);
 
-  // Auto-hide manager when done
   useEffect(() => {
     if (isAllDone && showManager) {
       const timer = setTimeout(() => {
         setShowManager(false);
-        // We delay clearing the items so the close animation can play out
         setTimeout(() => setUploadItems([]), 300);
-      }, 3000); // 3 seconds before auto-closing
+      }, 3000); 
       return () => clearTimeout(timer);
     }
   }, [isAllDone, showManager]);
@@ -295,9 +298,16 @@ export default function DragDropUploader({
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
-      const uploads = files.map(file => ({ file, targetAlbumId: albumId, targetStoryId: storyId }));
+      const uploads: UploadItem[] = files.map(file => ({ 
+        id: Math.random().toString(36).substring(7),
+        name: file.name,
+        type: 'file',
+        file, 
+        targetAlbumId: albumId, 
+        targetStoryId: storyId,
+        status: 'pending' 
+      }));
       startUpload(uploads);
-      // Reset input so the same files can be selected again if needed
       e.target.value = '';
     }
   }
@@ -350,7 +360,6 @@ export default function DragDropUploader({
           display: 'flex', flexDirection: 'column',
           animation: 'slideUp 0.3s ease-out'
         }}>
-          {/* Header */}
           <div style={{
             background: isAllDone ? '#4caf50' : 'var(--bg-primary)',
             color: isAllDone ? 'white' : 'var(--text-primary)',
@@ -374,7 +383,6 @@ export default function DragDropUploader({
             </div>
           </div>
           
-          {/* List */}
           {!isMinimized && (
             <div style={{
               maxHeight: '300px', overflowY: 'auto', padding: '0', background: '#fcfcfc'
@@ -385,12 +393,21 @@ export default function DragDropUploader({
                   borderBottom: '1px solid #f0f0f0', gap: '1rem', background: 'white'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    {item.type === 'folder' ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    )}
                   </div>
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                       {item.name}
                     </div>
+                    {item.type === 'folder' && item.progress && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {item.progress.uploaded} / {item.progress.total} tệp
+                      </div>
+                    )}
                   </div>
                   <div>
                     {item.status === 'uploading' && <div className="loading-spinner" style={{ width: '16px', height: '16px', border: '2px solid rgba(201,122,126,0.3)', borderTopColor: 'var(--accent-1)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>}
