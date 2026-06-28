@@ -7,31 +7,12 @@ const client = createClient({
 
 async function run() {
   try {
-    const userId = 'cmqxp0une000004ife90ju6yw';
-
-    // Delete the duplicates and the test album
-    const toDelete = ['cmqxuwfkw000004i5vn0ju5za', 'cmqxuwfrk000004l8psc3dbym', 'cmqxv5ye5000004l7zaww7xn4'];
-    for (const id of toDelete) {
-      await client.execute({
-        sql: "DELETE FROM Album WHERE id = ?",
-        args: [id]
-      });
-      console.log("Deleted", id);
-    }
-
-    // Assign the remaining album to the user
-    await client.execute({
-      sql: "UPDATE Album SET userId = ? WHERE id = ?",
-      args: [userId, 'cmqxokz26000204l7oi8fp801']
-    });
-    console.log("Updated original album userId");
-
-    // Also fix photos if any
-    await client.execute({
-      sql: "UPDATE Photo SET userId = ? WHERE userId IS NULL",
-      args: [userId]
-    });
-    console.log("Updated photos userId");
+    // Delete all albums and photos to reset remote state
+    await client.execute({ sql: "DELETE FROM Photo" });
+    console.log("Deleted all photos");
+    
+    await client.execute({ sql: "DELETE FROM Album" });
+    console.log("Deleted all albums");
 
   } catch (err) {
     console.error("Error:", err);
