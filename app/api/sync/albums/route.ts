@@ -5,9 +5,19 @@ import { invalidatePattern } from "@/lib/redis";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const userEmail = request.headers.get("x-user-email");
+    let targetUser = null;
+    if (userEmail) {
+      targetUser = await prisma.user.findUnique({ where: { email: userEmail } });
+    }
+    if (!targetUser) {
+      targetUser = await prisma.user.findFirst();
+    }
+    
     const albums = await prisma.album.findMany({
+      where: { userId: targetUser?.id },
       select: {
         id: true,
         name: true,
@@ -33,9 +43,16 @@ export async function POST(request: Request) {
 
     const results = [];
     
-    // Find a default user to assign the albums to
-    const defaultUser = await prisma.user.findFirst();
-    const defaultUserId = defaultUser?.id;
+    // Find the user to assign the albums to
+    const userEmail = request.headers.get("x-user-email");
+    let targetUser = null;
+    if (userEmail) {
+      targetUser = await prisma.user.findUnique({ where: { email: userEmail } });
+    }
+    if (!targetUser) {
+      targetUser = await prisma.user.findFirst();
+    }
+    const defaultUserId = targetUser?.id;
 
     for (const item of data) {
       if (!item.name) continue;
