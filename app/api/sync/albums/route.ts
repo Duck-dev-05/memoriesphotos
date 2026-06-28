@@ -94,6 +94,7 @@ export async function POST(request: Request) {
     await invalidatePattern("user:*:albums");
     await invalidatePattern("user:*:album:*");
     revalidatePath("/albums");
+    revalidatePath("/albums", "layout");
     revalidatePath("/");
     
     return NextResponse.json(results);

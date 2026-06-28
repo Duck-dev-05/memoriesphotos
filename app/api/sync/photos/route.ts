@@ -103,6 +103,7 @@ export async function POST(request: Request) {
     revalidatePath("/");
     revalidatePath("/memories");
     revalidatePath("/albums");
+    revalidatePath("/albums", "layout");
     
     return NextResponse.json(results);
   } catch (error) {
