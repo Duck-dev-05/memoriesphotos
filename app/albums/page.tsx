@@ -8,6 +8,7 @@ import DeleteAlbumButton from "./DeleteAlbumButton";
 
 import SortDropdown from "./SortDropdown";
 import { Suspense } from "react";
+import AutoRefresh from "./AutoRefresh";
 
 export const metadata: Metadata = {
   title: "Bộ Sưu Tập",
@@ -184,6 +185,7 @@ export default function AlbumsPage({ searchParams }: { searchParams: Promise<{ s
   
   return (
     <main>
+      <AutoRefresh interval={5000} />
       <Suspense fallback={
         <>
           <section className={styles.hero} style={{ minHeight: '350px' }}>

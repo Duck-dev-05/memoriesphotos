@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { invalidatePattern } from "@/lib/redis";
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,11 @@ export async function POST(request: Request) {
     }
 
     const results = [];
+    
+    // Find a default user to assign the albums to
+    const defaultUser = await prisma.user.findFirst();
+    const defaultUserId = defaultUser?.id;
+
     for (const item of data) {
       if (!item.name) continue;
 
@@ -53,6 +59,7 @@ export async function POST(request: Request) {
               description: item.description,
               coverImage: item.coverImage,
               parentId: item.parentId,
+              userId: defaultUserId,
               createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
             }
           });
@@ -67,6 +74,8 @@ export async function POST(request: Request) {
       }
     }
 
+    await invalidatePattern("user:*:albums");
+    await invalidatePattern("user:*:album:*");
     revalidatePath("/albums");
     revalidatePath("/");
     
