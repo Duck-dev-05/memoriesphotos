@@ -67,8 +67,8 @@ export default function PhotoNavigator({
         <Link 
           href={`/photo/${prevId}`} 
           style={{ 
-            position: "absolute", left: "-4rem", top: "50%", transform: "translateY(-50%)",
-            color: "var(--text-secondary)", opacity: 0.5, transition: "all 0.2s",
+            position: "absolute", left: "2rem", top: "50%", transform: "translateY(-50%)",
+            color: "white", opacity: 0.5, transition: "all 0.2s",
             zIndex: 10, padding: "1rem", display: "none" // We use media query later or just show on desktop
           }}
           className="desktop-nav-arrow"
@@ -84,8 +84,8 @@ export default function PhotoNavigator({
         <Link 
           href={`/photo/${nextId}`} 
           style={{ 
-            position: "absolute", right: "-4rem", top: "50%", transform: "translateY(-50%)",
-            color: "var(--text-secondary)", opacity: 0.5, transition: "all 0.2s",
+            position: "absolute", right: "2rem", top: "50%", transform: "translateY(-50%)",
+            color: "white", opacity: 0.5, transition: "all 0.2s",
             zIndex: 10, padding: "1rem", display: "none"
           }}
           className="desktop-nav-arrow"
@@ -102,7 +102,9 @@ export default function PhotoNavigator({
           }
           .desktop-nav-arrow:hover {
             opacity: 1 !important;
-            color: var(--accent-1) !important;
+            color: white !important;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
           }
         }
       `}} />
