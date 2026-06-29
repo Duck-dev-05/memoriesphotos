@@ -57,10 +57,10 @@ export default async function PhotoDetail({
   }
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, backgroundColor: "#000", display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden" }}>
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100001, backgroundColor: "#000", display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden" }}>
       
       {/* Top action bar - Fixed overlay */}
-      <div style={{ position: "sticky", top: 0, left: 0, right: 0, zIndex: 110, padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)", color: "white" }}>
+      <div style={{ position: "sticky", top: 0, left: 0, right: 0, zIndex: 100002, padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)", color: "white" }}>
         <Link href={photo.albumId ? `/albums/${photo.albumId}` : "/"} style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "white", textDecoration: "none", padding: "0.5rem 1rem", borderRadius: "20px", background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Đóng
