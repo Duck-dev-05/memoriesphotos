@@ -13,6 +13,8 @@ export default function Navbar({ session }: { session: SessionPayload | null }) 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  if (pathname?.startsWith('/photo/')) return null;
+
   const handleMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setIsDropdownOpen(true);
