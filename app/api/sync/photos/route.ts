@@ -141,3 +141,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to sync photos" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const data = await request.json();
+    if (!Array.isArray(data)) {
+      return NextResponse.json({ error: "Invalid data format, expected array of ids" }, { status: 400 });
+    }
+
+    await prisma.photo.deleteMany({
+      where: { id: { in: data } }
+    });
+
+    await invalidatePattern("user:*:albums");
+    await invalidatePattern("user:*:album:*");
+    await invalidatePattern("user:*:totalPhotos");
+    
+    revalidatePath("/");
+    revalidatePath("/memories");
+    revalidatePath("/albums");
+    revalidatePath("/albums", "layout");
+    
+    return NextResponse.json({ success: true, deletedCount: data.length });
+  } catch (error) {
+    console.error("Error deleting photos for sync:", error);
+    return NextResponse.json({ error: "Failed to delete photos" }, { status: 500 });
+  }
+}

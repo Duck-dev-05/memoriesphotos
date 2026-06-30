@@ -103,3 +103,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to sync albums" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const data = await request.json();
+    if (!Array.isArray(data)) {
+      return NextResponse.json({ error: "Invalid data format, expected array of ids" }, { status: 400 });
+    }
+
+    await prisma.album.deleteMany({
+      where: { id: { in: data } }
+    });
+
+    await invalidatePattern("user:*:albums");
+    await invalidatePattern("user:*:album:*");
+    revalidatePath("/albums");
+    revalidatePath("/albums", "layout");
+    revalidatePath("/");
+    
+    return NextResponse.json({ success: true, deletedCount: data.length });
+  } catch (error) {
+    console.error("Error deleting albums for sync:", error);
+    return NextResponse.json({ error: "Failed to delete albums" }, { status: 500 });
+  }
+}
