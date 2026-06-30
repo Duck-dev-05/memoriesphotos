@@ -126,9 +126,7 @@ export async function POST(request: Request) {
       }
     }
 
-    await invalidatePattern("user:*:albums");
-    await invalidatePattern("user:*:album:*");
-    await invalidatePattern("user:*:totalPhotos");
+    await invalidatePattern("user:*:*");
     
     revalidatePath("/");
     revalidatePath("/memories");
@@ -153,9 +151,7 @@ export async function DELETE(request: Request) {
       where: { id: { in: data } }
     });
 
-    await invalidatePattern("user:*:albums");
-    await invalidatePattern("user:*:album:*");
-    await invalidatePattern("user:*:totalPhotos");
+    await invalidatePattern("user:*:*");
     
     revalidatePath("/");
     revalidatePath("/memories");
