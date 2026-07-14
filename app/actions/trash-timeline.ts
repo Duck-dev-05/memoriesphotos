@@ -11,6 +11,7 @@ import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
 import { getCache, setCache, invalidatePattern } from "@/lib/redis";
 import { pipeline, env } from "@xenova/transformers";
+import { syncLocalPhotoToCloud } from "./photo-sync";
 
 // Optional: don't load local models, fetch from HuggingFace
 env.allowLocalModels = false;
@@ -341,6 +342,17 @@ export async function uploadGuestPhoto(token: string, formData: FormData) {
   }
   revalidatePath(`/shared/${token}`, "page");
   revalidatePath(`/albums/${album.id}`, "layout");
+
+  // Trigger background sync and cleanup if it was saved locally
+  const guestPhoto = await prisma.photo.findFirst({
+    where: { url: uploadUrl, albumId: album.id, userId: session.userId },
+    orderBy: { createdAt: "desc" }
+  });
+  if (guestPhoto && guestPhoto.url && guestPhoto.url.startsWith("/uploads/")) {
+    syncLocalPhotoToCloud(guestPhoto.id, guestPhoto.url).catch((err) => {
+      console.warn("Background cloud sync failed for guest upload:", err);
+    });
+  }
 }
 
 export async function saveGuestUploadedPhotoRecord(token: string, payload: {
@@ -362,8 +374,7 @@ export async function saveGuestUploadedPhotoRecord(token: string, payload: {
     throw new Error("Tải lên không được phép cho album này");
   }
 
-  // Upload guest photo and assign to the logged-in user
-  await prisma.photo.create({
+  const photo = await prisma.photo.create({
     data: {
       url: payload.url,
       altText: payload.altText || "Guest photo",
@@ -383,6 +394,13 @@ export async function saveGuestUploadedPhotoRecord(token: string, payload: {
   }
   revalidatePath(`/shared/${token}`, "page");
   revalidatePath(`/albums/${album.id}`, "layout");
+
+  // Trigger background sync and cleanup if it was saved locally
+  if (photo.url && photo.url.startsWith("/uploads/")) {
+    syncLocalPhotoToCloud(photo.id, photo.url).catch((err) => {
+      console.warn("Background cloud sync failed for guest upload:", err);
+    });
+  }
 }
 
 export async function getSharedAlbums() {
@@ -718,6 +736,13 @@ export async function saveUploadedPhotoRecord(payload: {
   revalidatePath("/albums", "layout");
   if (payload.albumId) {
     revalidatePath(`/albums/${payload.albumId}`, "layout");
+  }
+
+  // Trigger background sync and cleanup if it was saved locally
+  if (photo.url && photo.url.startsWith("/uploads/")) {
+    syncLocalPhotoToCloud(photo.id, photo.url).catch((err) => {
+      console.warn("Background cloud sync failed for upload:", err);
+    });
   }
 
   return photo;

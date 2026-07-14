@@ -11,6 +11,7 @@ import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
 import { getCache, setCache, invalidatePattern } from "@/lib/redis";
 import { pipeline, env } from "@xenova/transformers";
+import { syncLocalPhotoToCloud } from "./photo-sync";
 
 // Optional: don't load local models, fetch from HuggingFace
 env.allowLocalModels = false;
@@ -136,7 +137,7 @@ export async function uploadPhoto(formData: FormData) {
     create: { name: tag },
   }));
 
-  await prisma.photo.create({
+  const photo = await prisma.photo.create({
     data: {
       url: uploadUrl,
       altText: altText || "Uploaded photo",
@@ -166,6 +167,10 @@ export async function uploadPhoto(formData: FormData) {
   revalidatePath("/", "layout");
   revalidatePath("/albums", "layout");
   if (albumId) revalidatePath(`/albums/${albumId}`, "layout");
+
+  if (photo.url && photo.url.startsWith("/uploads/")) {
+    syncLocalPhotoToCloud(photo.id, photo.url).catch(console.error);
+  }
 }
 
 export async function updatePhoto(id: string, formData: FormData) {
@@ -330,6 +335,10 @@ export async function saveEditedPhoto(id: string, formData: FormData) {
   revalidatePath("/", "layout");
   revalidatePath(`/photo/${id}`, "layout");
   if (photo.albumId) revalidatePath(`/albums/${photo.albumId}`, "layout");
+
+  if (photo.url && photo.url.startsWith("/uploads/")) {
+    syncLocalPhotoToCloud(photo.id, photo.url).catch(console.error);
+  }
 }
 
 

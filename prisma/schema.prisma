@@ -45,6 +45,7 @@ model Album {
 model Photo {
   id           String    @id @default(cuid())
   url          String?
+  cloudUrl     String?
   imageData    String?
   altText      String
   description  String?

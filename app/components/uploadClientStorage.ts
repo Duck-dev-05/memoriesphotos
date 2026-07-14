@@ -94,10 +94,6 @@ export async function uploadFileLocalFirst(file: File, signBody?: CloudSignBody)
       localFormData.append("file", file);
       const localUrl = await uploadFileLocally(localFormData);
 
-      uploadFileToCloud(file, signBody).catch((error) => {
-        console.warn("Background cloud upload failed", error);
-      });
-
       return localUrl;
     } catch (error) {
       console.warn("Local upload failed, falling back to cloud storage", error);
