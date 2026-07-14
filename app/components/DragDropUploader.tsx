@@ -101,6 +101,10 @@ export default function DragDropUploader({
       }
 
       for (const entry of entries) {
+        if (allUploads.length >= 50) {
+          alert("You can only upload up to 50 items at a time. Extra items were skipped.");
+          break;
+        }
         const result = await processTopLevelEntry(entry);
         if (result) allUploads.push(result);
       }
@@ -154,9 +158,11 @@ export default function DragDropUploader({
 
   async function traverseFileTree(item: any, path: string = '', filesToUpload: File[]) {
     return new Promise<void>((resolve) => {
+      if (filesToUpload.length >= 50) return resolve(); // limit reached
+
       if (item.isFile) {
         item.file((file: File) => {
-          if (isImageFile(file) || isVideoFile(file)) {
+          if (filesToUpload.length < 50 && (isImageFile(file) || isVideoFile(file))) {
             filesToUpload.push(file);
           }
           resolve();
@@ -196,7 +202,8 @@ export default function DragDropUploader({
       
       try {
         if (item.type === 'file' && item.file) {
-          if (isVideoFile(item.file) && item.file.size > videoSizeLimit) {
+          if (item.file.size > 20 * 1024 * 1024) { // 20 MB limit for all files
+            alert(`File ${item.file.name} exceeds the 20MB limit and was skipped.`);
             setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'error' } : p));
             continue;
           }
@@ -215,7 +222,8 @@ export default function DragDropUploader({
 
           let uploadedCount = 0;
           for (const file of item.folderFiles) {
-            if (isVideoFile(file) && file.size > videoSizeLimit) {
+            if (file.size > 20 * 1024 * 1024) { // 20 MB limit
+              alert(`File ${file.name} exceeds the 20MB limit and was skipped.`);
               continue;
             }
             try {
@@ -228,9 +236,13 @@ export default function DragDropUploader({
           }
           setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'success', progress: { uploaded: uploadedCount, total: item.folderFiles!.length } } : p));
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Upload failed for", item.name, err);
         setUploadItems(prev => prev.map(p => p.id === item.id ? { ...p, status: 'error' } : p));
+        if (err?.message?.includes("Unauthorized") || err?.message?.includes("401") || err?.status === 401) {
+          alert("You must be logged in to upload photos.");
+          break; // Stop further uploads
+        }
       }
     }
 
