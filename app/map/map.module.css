@@ -1,0 +1,82 @@
+.mapContainer {
+  width: 100%;
+  height: calc(100vh - 90px);
+  position: relative;
+  z-index: 1;
+}
+
+.mapWrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.customMarker {
+  background: none;
+  border: none;
+}
+
+.markerImageContainer {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  background-color: var(--bg-tertiary);
+}
+
+.markerImageContainer:hover {
+  transform: scale(1.1);
+  border-color: var(--accent-1);
+  z-index: 1000 !important;
+}
+
+.markerImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popupContent {
+  text-align: center;
+  font-family: var(--font-body);
+  max-width: 200px;
+}
+
+.popupImage {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.popupLocation {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.popupDate {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.popupLink {
+  display: inline-block;
+  color: var(--bg-primary);
+  background-color: var(--accent-1);
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: opacity 0.2s ease;
+}
+
+.popupLink:hover {
+  opacity: 0.9;
+}

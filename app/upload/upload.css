@@ -1,0 +1,226 @@
+.uploadPageWrapper {
+  min-height: calc(100vh - 80px); /* minus nav */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative background elements */
+.uploadPageWrapper::before,
+.uploadPageWrapper::after {
+  content: '';
+  position: absolute;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.uploadPageWrapper::before {
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(201, 122, 126, 0.15) 0%, transparent 70%);
+}
+
+.uploadPageWrapper::after {
+  bottom: -10%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(160, 140, 140, 0.15) 0%, transparent 70%);
+}
+
+.uploadContainer {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 30px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+}
+
+/* =============================================
+   LEFT PANE: FORM
+   ============================================= */
+.uploadFormPane {
+  flex: 1;
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 100%);
+}
+
+.formHeader {
+  margin-bottom: 3rem;
+}
+
+.formTitle {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.formSubtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.uploadForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputLabel {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sleekInput {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1.2rem;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.sleekInput:focus {
+  outline: none;
+  background: white;
+  border-color: var(--text-primary);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.sleekInput::placeholder {
+  color: rgba(0,0,0,0.3);
+}
+
+.fileInputWrapper {
+  position: relative;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.fileInputWrapper:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--text-primary);
+}
+
+.sleekFileInput {
+  width: 100%;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.sleekFileInput::file-selector-button {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin-right: 1rem;
+  transition: all 0.2s ease;
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.sleekFileInput::file-selector-button:hover {
+  background: var(--text-primary);
+  color: white;
+}
+
+.submitBtn {
+  margin-top: 1rem;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border: none;
+  padding: 1.2rem;
+  border-radius: 12px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.submitBtn:hover {
+  background: #111;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loadingSpinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 900px) {
+  .uploadContainer {
+    flex-direction: column;
+  }
+  
+  .uploadFormPane, .uploadDropzonePane {
+    padding: 3rem 2rem;
+  }
+
+  .uploadFormPane {
+    border-right: none;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .dropzoneVisual {
+    min-height: 300px;
+  }
+}

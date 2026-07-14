@@ -1,0 +1,133 @@
+.actionBar {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  padding: 12px 24px;
+  z-index: 1000;
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translate(-50%, 100px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.actionContent {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.selectedCount {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+}
+
+.actionBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.deleteBtn {
+  color: #e53e3e;
+  background: rgba(229, 62, 62, 0.1);
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: #e53e3e;
+  color: white;
+}
+
+.cancelBtn {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-primary);
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color);
+  margin: 0 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-top-color: var(--text-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .actionBar {
+    width: calc(100% - 32px);
+    bottom: 16px;
+    padding: 12px;
+  }
+  .actionContent {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .buttons {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .actionBtn {
+    flex: 1;
+    justify-content: center;
+  }
+  .divider {
+    display: none;
+  }
+}

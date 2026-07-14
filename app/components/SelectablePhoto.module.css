@@ -1,0 +1,54 @@
+.wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.wrapper.selected {
+  transform: scale(0.95);
+  box-shadow: 0 0 0 4px var(--accent-1);
+}
+
+.link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.wrapper.selected .link {
+  pointer-events: none; /* Prevent accidentally clicking the link when dragging or selecting */
+}
+
+.checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  pointer-events: none; /* Let clicks pass through to the wrapper */
+}
+
+.checkbox.checked {
+  background: var(--accent-1);
+  border-color: var(--accent-1);
+}
+
+.checkbox svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+.wrapper:hover .checkbox:not(.checked) {
+  background: rgba(255, 255, 255, 0.9);
+}

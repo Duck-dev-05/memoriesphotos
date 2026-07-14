@@ -1,0 +1,390 @@
+/* =============================================
+   MEMORIES PAGE — GROUPED BY YEAR
+   ============================================= */
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px) rotate(-1deg); }
+  to   { opacity: 1; transform: translateY(0)    rotate(0deg);  }
+}
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.85); }
+  70%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Page Shell ─────────────────────────── */
+.page {
+  min-height: 100vh;
+  padding-bottom: 8rem;
+}
+
+/* ── Hero Header ─────────────────────────── */
+.hero {
+  padding: 7rem 2rem 4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroEyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent-1);
+  margin-bottom: 1.25rem;
+  padding: 0.4rem 1.5rem;
+  border: var(--border-dashed);
+  border-radius: var(--radius-full);
+}
+
+.heroTitle {
+  font-family: var(--font-heading);
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.heroTitle em {
+  color: var(--accent-1);
+  font-style: italic;
+}
+
+.heroSub {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.heroDate {
+  display: inline-block;
+  margin-top: 2rem;
+  font-family: var(--font-handwriting);
+  font-size: 1.4rem;
+  color: var(--text-tertiary);
+}
+
+/* ── Empty State ─────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 6rem 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  display: block;
+  opacity: 0.4;
+}
+
+.emptyTitle {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.emptyText {
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* ── Content ─────────────────────────────── */
+.content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── Year Group ─────────────────────────── */
+.yearGroup {
+  margin-bottom: 6rem;
+  animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.yearHeader {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.yearBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 3.5rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--accent-1);
+  min-width: 120px;
+  line-height: 1;
+}
+
+.yearDivider {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(201,122,126,0.4), transparent);
+}
+
+.yearCount {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* ── Photo Grid ─────────────────────────── */
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2rem;
+}
+
+/* ── Photo Card ─────────────────────────── */
+.card {
+  position: relative;
+  background: var(--bg-polaroid);
+  padding: 0.9rem 0.9rem 3.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.04);
+  text-decoration: none;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              box-shadow 0.4s ease;
+  cursor: pointer;
+  animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card:nth-child(odd)  { transform: rotate(-1.5deg); }
+.card:nth-child(even) { transform: rotate(1.2deg);  }
+
+.card:hover {
+  transform: translateY(-10px) scale(1.03) rotate(0deg) !important;
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+}
+
+.cardImage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+}
+
+.cardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(0.3) contrast(1.05);
+  transition: filter var(--transition-normal);
+}
+
+.card:hover .cardImg {
+  filter: sepia(0) contrast(1);
+}
+
+.cardCaption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-handwriting);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  padding: 0 0.75rem;
+  text-align: center;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Year stamp on each card */
+.cardYear {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: var(--accent-1);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  z-index: 2;
+}
+
+/* Washi tape decoration on card */
+.cardTape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 70px;
+  height: 22px;
+  background: rgba(220, 210, 190, 0.8);
+  z-index: 5;
+  mix-blend-mode: multiply;
+}
+
+/* Slideshow button */
+.slideshowBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.5rem;
+  background: transparent;
+  border: var(--border-dashed);
+  color: var(--text-secondary);
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-normal);
+  text-decoration: none;
+}
+
+.slideshowBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--accent-1);
+  border-color: var(--accent-1);
+}
+
+.heroActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .photoGrid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .yearBadge { font-size: 2.5rem; min-width: 90px; }
+}
+
+/* =========================================
+   MEMORY STORY INPUT
+========================================= */
+
+.memoryStoryContainer {
+  margin-bottom: 2rem;
+  padding: 0;
+  width: 100%;
+}
+
+.memoryStoryContainer.hasContent {
+  background: var(--bg-polaroid);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: var(--border-delicate);
+  position: relative;
+}
+
+.memoryStoryText {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  margin-bottom: 1rem;
+}
+
+.addStoryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px dashed rgba(59,47,47,0.3);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.addStoryBtn:hover {
+  background: rgba(59,47,47,0.02);
+  border-color: var(--accent-1);
+  color: var(--accent-1);
+}
+
+.editStoryBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.editStoryBtn:hover {
+  opacity: 1;
+  color: var(--accent-1);
+}
+
+.memoryStoryTextarea {
+  width: 100%;
+  background: var(--bg-primary);
+  border: var(--border-delicate);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 100px;
+}
+
+.memoryStoryTextarea:focus {
+  outline: none;
+  border-color: var(--accent-1);
+  box-shadow: 0 0 0 2px rgba(216,132,132,0.1);
+}
+
+.memoryStoryActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
