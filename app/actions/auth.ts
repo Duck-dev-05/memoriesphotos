@@ -229,14 +229,14 @@ async function saveBufferLocally(buffer: Buffer, filenameBase: string): Promise<
   return saveBufferToWritableStorage(buffer, filename, "image/jpeg");
 }
 
-async function saveUploadedFileBufferLocally(buffer: Buffer, file: File, filenameBase = ""): Promise<string> {
+export async function saveUploadedFileBufferLocally(buffer: Buffer, file: File, filenameBase = ""): Promise<string> {
   const ext = file.name.split('.').pop() || 'tmp';
   const prefix = filenameBase ? `${filenameBase}-` : "";
   const filename = `${prefix}${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
   return saveBufferToWritableStorage(buffer, filename, file.type);
 }
 
-async function uploadBufferToCloud(buffer: Buffer, filename: string, contentType?: string): Promise<string | null> {
+export async function uploadBufferToCloud(buffer: Buffer, filename: string, contentType?: string): Promise<string | null> {
   // Use ImgBB first for all files including HEIC
   const apiKey = process.env.IMGBB_API_KEY || process.env.NEXT_PUBLIC_IMGBB_API_KEY;
   if (apiKey && contentType?.startsWith("image/")) {

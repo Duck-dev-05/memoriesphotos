@@ -98,6 +98,7 @@ export async function syncLocalPhotoToCloud(photoId: string, localUrl: string) {
     // Update database with cloudUrl
     await prisma.photo.update({
       where: { id: photoId },
+      // @ts-ignore - Ignore type error if prisma generate hasn't updated local types
       data: { cloudUrl: finalUrl },
     });
 

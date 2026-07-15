@@ -32,6 +32,7 @@ export async function evictLruCache() {
     const evictablePhotos = await prisma.photo.findMany({
       where: {
         url: { startsWith: "/uploads/" },
+        // @ts-ignore - Ignore type error if prisma generate hasn't updated local types
         cloudUrl: { not: null }
       },
       orderBy: {
@@ -47,7 +48,7 @@ export async function evictLruCache() {
         break;
       }
 
-      if (!photo.url || !photo.cloudUrl) continue;
+      if (!photo.url || !(photo as any).cloudUrl) continue;
 
       const filePath = path.join(process.cwd(), "public", photo.url);
       
@@ -61,7 +62,7 @@ export async function evictLruCache() {
         // Update database to point directly to cloud URL
         await prisma.photo.update({
           where: { id: photo.id },
-          data: { url: photo.cloudUrl }
+          data: { url: (photo as any).cloudUrl }
         });
 
         freeSpaceBytes += size;

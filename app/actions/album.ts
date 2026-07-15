@@ -7,6 +7,7 @@ import path from "path";
 import exifr from "exifr";
 import bcrypt from "bcryptjs";
 import { checkAuthServerAction, createSessionCookie, deleteSessionCookie, getSession } from "@/lib/auth";
+import { uploadBufferToCloud, saveUploadedFileBufferLocally } from "./auth";
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
 import { getCache, setCache, invalidatePattern } from "@/lib/redis";
