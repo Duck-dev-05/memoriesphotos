@@ -159,7 +159,7 @@ export async function getStorageInfo() {
   if (!session) return { usage: 0, limit: 0 };
 
   const usage = await getStorageUsage();
-  const limit = getUserStorageLimitBytes();
+  const limit = await getUserStorageLimitBytes();
 
   return { usage, limit };
 }
@@ -182,14 +182,14 @@ function getLocalUploadLimitBytes() {
     : 25 * 1024 * 1024;
 }
 
-function getVideoSizeLimitBytes() {
+export async function getVideoSizeLimitBytes() {
   const configuredMb = Number(process.env.VIDEO_SIZE_LIMIT_MB || process.env.NEXT_PUBLIC_VIDEO_SIZE_LIMIT_MB);
   return Number.isFinite(configuredMb) && configuredMb > 0
     ? configuredMb * 1024 * 1024
     : 500 * 1024 * 1024;
 }
 
-function getUserStorageLimitBytes() {
+export async function getUserStorageLimitBytes() {
   const configuredGb = Number(process.env.USER_STORAGE_LIMIT_GB || process.env.NEXT_PUBLIC_USER_STORAGE_LIMIT_GB);
   return Number.isFinite(configuredGb) && configuredGb > 0
     ? configuredGb * 1024 * 1024 * 1024

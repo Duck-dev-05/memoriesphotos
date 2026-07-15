@@ -12,7 +12,7 @@ import type { UploadApiResponse } from "cloudinary";
 import { getCache, setCache, invalidatePattern } from "@/lib/redis";
 import { pipeline, env } from "@xenova/transformers";
 import { syncLocalPhotoToCloud } from "./photo-sync";
-import { isVideoFile } from "./auth";
+import { isVideoFile, getVideoSizeLimitBytes, getUserStorageLimitBytes, getStorageUsage } from "./auth";
 
 // Optional: don't load local models, fetch from HuggingFace
 env.allowLocalModels = false;
@@ -40,7 +40,7 @@ export async function uploadPhoto(formData: FormData) {
 
   // Check video size limit
   if (isVideo) {
-    const videoSizeLimit = getVideoSizeLimitBytes();
+    const videoSizeLimit = await getVideoSizeLimitBytes();
     if (fileSize > videoSizeLimit) {
       const limitMB = videoSizeLimit / (1024 * 1024);
       throw new Error(`Video size exceeds the limit of ${limitMB}MB`);
@@ -49,7 +49,7 @@ export async function uploadPhoto(formData: FormData) {
 
   // Check user storage limit
   const currentStorageUsage = await getStorageUsage();
-  const storageLimit = getUserStorageLimitBytes();
+  const storageLimit = await getUserStorageLimitBytes();
   if (currentStorageUsage + fileSize > storageLimit) {
     const limitGB = storageLimit / (1024 * 1024 * 1024);
     const usedGB = currentStorageUsage / (1024 * 1024 * 1024);
