@@ -196,7 +196,7 @@ function getUserStorageLimitBytes() {
     : 10 * 1024 * 1024 * 1024;
 }
 
-function isVideoFile(file: File) {
+export async function isVideoFile(file: File) {
   if (file.type.startsWith("video/")) return true;
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
   return ["mp4", "mov", "avi", "webm", "mkv"].includes(ext);

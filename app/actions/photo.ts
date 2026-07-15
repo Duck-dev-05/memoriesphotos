@@ -12,6 +12,7 @@ import type { UploadApiResponse } from "cloudinary";
 import { getCache, setCache, invalidatePattern } from "@/lib/redis";
 import { pipeline, env } from "@xenova/transformers";
 import { syncLocalPhotoToCloud } from "./photo-sync";
+import { isVideoFile } from "./auth";
 
 // Optional: don't load local models, fetch from HuggingFace
 env.allowLocalModels = false;
@@ -34,7 +35,7 @@ export async function uploadPhoto(formData: FormData) {
   if (!file) throw new Error("File is required");
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const isVideo = isVideoFile(file);
+  const isVideo = await isVideoFile(file);
   const fileSize = buffer.length;
 
   // Check video size limit
