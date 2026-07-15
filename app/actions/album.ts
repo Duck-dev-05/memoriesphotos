@@ -10,7 +10,7 @@ import { checkAuthServerAction, createSessionCookie, deleteSessionCookie, getSes
 import { uploadBufferToCloud, saveUploadedFileBufferLocally } from "./auth";
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
-import { getCache, setCache, invalidatePattern } from "@/lib/redis";
+import { getCache, setCache, invalidatePattern, clearUserCache } from "@/lib/redis";
 import { pipeline, env } from "@xenova/transformers";
 
 // Optional: don't load local models, fetch from HuggingFace
@@ -24,9 +24,7 @@ cloudinary.config({
 
 
 
-async function clearUserCache(userId: string) {
-  await invalidatePattern(`user:${userId}:*`);
-}
+
 
 
 export async function createAlbum(formData: FormData) {

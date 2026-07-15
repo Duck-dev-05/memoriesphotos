@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     const defaultUserId = targetUser?.id;
 
     // Hoist dynamic imports out of the loop
-    let fs, path, exifr;
+    let fs: any, path: any, exifr: any;
     const hasUploads = data.some(item => item.url && item.url.startsWith('/uploads/'));
     if (hasUploads) {
       fs = await import('fs/promises');

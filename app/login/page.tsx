@@ -22,8 +22,12 @@ export default function LoginPage() {
       formData.append("email", email);
       formData.append("password", password);
 
-      await login(formData);
-      router.push("/");
+      const res = await login(formData);
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
       setError(err.message || "Đăng nhập thất bại");
     } finally {

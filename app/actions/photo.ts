@@ -9,10 +9,10 @@ import bcrypt from "bcryptjs";
 import { checkAuthServerAction, createSessionCookie, deleteSessionCookie, getSession } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
-import { getCache, setCache, invalidatePattern } from "@/lib/redis";
+import { getCache, setCache, invalidatePattern, clearUserCache } from "@/lib/redis";
 import { pipeline, env } from "@xenova/transformers";
 import { syncLocalPhotoToCloud } from "./photo-sync";
-import { isVideoFile, getVideoSizeLimitBytes, getUserStorageLimitBytes, getStorageUsage } from "./auth";
+import { isVideoFile, getVideoSizeLimitBytes, getUserStorageLimitBytes, getStorageUsage, saveUploadedFileBufferLocally } from "./auth";
 
 // Optional: don't load local models, fetch from HuggingFace
 env.allowLocalModels = false;

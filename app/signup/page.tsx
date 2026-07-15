@@ -26,8 +26,12 @@ export default function SignupPage() {
       formData.append("password", password);
       formData.append("confirmPassword", confirmPassword);
 
-      await register(formData);
-      router.push("/");
+      const res = await register(formData);
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
       setError(err.message || "Đăng ký thất bại");
     } finally {

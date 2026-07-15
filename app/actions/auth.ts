@@ -27,19 +27,21 @@ export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  if (!email || !password) throw new Error("Email và mật khẩu là bắt buộc");
+  if (!email || !password) return { error: "Email và mật khẩu là bắt buộc" };
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.passwordHash) throw new Error("Thông tin đăng nhập không hợp lệ");
+  if (!user || !user.passwordHash) return { error: "Thông tin đăng nhập không hợp lệ" };
 
   const isValid = await bcrypt.compare(password, user.passwordHash);
-  if (!isValid) throw new Error("Thông tin đăng nhập không hợp lệ");
+  if (!isValid) return { error: "Thông tin đăng nhập không hợp lệ" };
 
   await createSessionCookie({
     userId: user.id,
     email: user.email,
     name: user.name,
   });
+
+  return { success: true };
 }
 
 export async function register(formData: FormData) {
@@ -48,11 +50,11 @@ export async function register(formData: FormData) {
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
-  if (!name || !email || !password) throw new Error("Vui lòng điền đầy đủ thông tin");
-  if (password !== confirmPassword) throw new Error("Mật khẩu không khớp");
+  if (!name || !email || !password) return { error: "Vui lòng điền đầy đủ thông tin" };
+  if (password !== confirmPassword) return { error: "Mật khẩu không khớp" };
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) throw new Error("Email này đã được đăng ký");
+  if (existing) return { error: "Email này đã được đăng ký" };
 
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -65,6 +67,8 @@ export async function register(formData: FormData) {
     email: user.email,
     name: user.name,
   });
+
+  return { success: true };
 }
 
 export async function logout() {

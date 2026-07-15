@@ -67,3 +67,7 @@ export async function invalidatePattern(pattern: string) {
     console.error(`Error invalidating pattern ${pattern}:`, err);
   }
 }
+
+export async function clearUserCache(userId: string) {
+  await invalidatePattern(`user:${userId}:*`);
+}
