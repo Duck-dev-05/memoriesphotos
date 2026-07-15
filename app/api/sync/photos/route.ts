@@ -68,116 +68,131 @@ export async function POST(request: Request) {
     }
     const defaultUserId = targetUser?.id;
 
-    for (const item of data) {
-      if (!item.altText && !item.url) continue;
+    // Hoist dynamic imports out of the loop
+    let fs, path, exifr;
+    const hasUploads = data.some(item => item.url && item.url.startsWith('/uploads/'));
+    if (hasUploads) {
+      fs = await import('fs/promises');
+      path = await import('path');
+      exifr = (await import('exifr')).default;
+    }
 
-      let photo;
-      try {
-        let exifDetails: any = {};
-        if (item.url && item.url.startsWith('/uploads/')) {
-          try {
-            const fs = await import('fs/promises');
-            const path = await import('path');
-            const fullPath = path.join(process.cwd(), 'public', item.url);
-            
-            // Check if file exists
-            await fs.access(fullPath);
-            
-            // Read file and parse EXIF
-            const buffer = await fs.readFile(fullPath);
-            const exifr = (await import('exifr')).default;
-            const exifData = await exifr.parse(buffer, {
-              tiff: true, exif: true, gps: true, reviveValues: true,
-            });
+    // Process in chunks to avoid overwhelming the database/system
+    const CHUNK_SIZE = 10;
+    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+      const chunk = data.slice(i, i + CHUNK_SIZE);
+      
+      const chunkPromises = chunk.map(async (item) => {
+        if (!item.altText && !item.url) return null;
 
-            if (exifData) {
-              if (!item.dateTaken && exifData.DateTimeOriginal) {
-                item.dateTaken = new Date(exifData.DateTimeOriginal);
-              } else if (!item.dateTaken && exifData.CreateDate) {
-                item.dateTaken = new Date(exifData.CreateDate);
-              }
+        let photo;
+        try {
+          if (item.url && item.url.startsWith('/uploads/')) {
+            try {
+              const fullPath = path.join(process.cwd(), 'public', item.url);
               
-              if (!item.cameraMake) item.cameraMake = (exifData.Make || exifData.make) ? String(exifData.Make || exifData.make).trim() : null;
-              if (!item.cameraModel) item.cameraModel = (exifData.Model || exifData.model) ? String(exifData.Model || exifData.model).trim() : null;
-              if (!item.lensModel) item.lensModel = (exifData.LensModel || exifData.Lens || exifData.lens) ? String(exifData.LensModel || exifData.Lens || exifData.lens).trim() : null;
-              if (!item.focalLength) item.focalLength = (exifData.FocalLength || exifData.focalLength) ? Number(exifData.FocalLength || exifData.focalLength) : null;
-              if (!item.fNumber) item.fNumber = (exifData.FNumber || exifData.fNumber || exifData.ApertureValue) ? Number(exifData.FNumber || exifData.fNumber || exifData.ApertureValue) : null;
-              if (!item.iso) item.iso = (exifData.ISO || exifData.iso) ? Number(exifData.ISO || exifData.iso) : null;
+              // Check if file exists
+              await fs.access(fullPath);
               
-              if (!item.exposureTime) {
-                const et = exifData.ExposureTime || exifData.exposureTime;
-                if (et) {
-                  item.exposureTime = et < 1 ? `1/${Math.round(1 / et)}` : String(et);
+              // Read file and parse EXIF
+              const buffer = await fs.readFile(fullPath);
+              const exifData = await exifr.parse(buffer, {
+                tiff: true, exif: true, gps: true, reviveValues: true,
+              });
+
+              if (exifData) {
+                if (!item.dateTaken && exifData.DateTimeOriginal) {
+                  item.dateTaken = new Date(exifData.DateTimeOriginal);
+                } else if (!item.dateTaken && exifData.CreateDate) {
+                  item.dateTaken = new Date(exifData.CreateDate);
                 }
+                
+                if (!item.cameraMake) item.cameraMake = (exifData.Make || exifData.make) ? String(exifData.Make || exifData.make).trim() : null;
+                if (!item.cameraModel) item.cameraModel = (exifData.Model || exifData.model) ? String(exifData.Model || exifData.model).trim() : null;
+                if (!item.lensModel) item.lensModel = (exifData.LensModel || exifData.Lens || exifData.lens) ? String(exifData.LensModel || exifData.Lens || exifData.lens).trim() : null;
+                if (!item.focalLength) item.focalLength = (exifData.FocalLength || exifData.focalLength) ? Number(exifData.FocalLength || exifData.focalLength) : null;
+                if (!item.fNumber) item.fNumber = (exifData.FNumber || exifData.fNumber || exifData.ApertureValue) ? Number(exifData.FNumber || exifData.fNumber || exifData.ApertureValue) : null;
+                if (!item.iso) item.iso = (exifData.ISO || exifData.iso) ? Number(exifData.ISO || exifData.iso) : null;
+                
+                if (!item.exposureTime) {
+                  const et = exifData.ExposureTime || exifData.exposureTime;
+                  if (et) {
+                    item.exposureTime = et < 1 ? `1/${Math.round(1 / et)}` : String(et);
+                  }
+                }
+                if (!item.width) item.width = (exifData.ImageWidth || exifData.ExifImageWidth) ? Number(exifData.ImageWidth || exifData.ExifImageWidth) : null;
+                if (!item.height) item.height = (exifData.ImageHeight || exifData.ExifImageHeight) ? Number(exifData.ImageHeight || exifData.ExifImageHeight) : null;
+                if (!item.latitude && exifData.latitude) item.latitude = exifData.latitude;
+                if (!item.longitude && exifData.longitude) item.longitude = exifData.longitude;
               }
-              if (!item.width) item.width = (exifData.ImageWidth || exifData.ExifImageWidth) ? Number(exifData.ImageWidth || exifData.ExifImageWidth) : null;
-              if (!item.height) item.height = (exifData.ImageHeight || exifData.ExifImageHeight) ? Number(exifData.ImageHeight || exifData.ExifImageHeight) : null;
-              if (!item.latitude && exifData.latitude) item.latitude = exifData.latitude;
-              if (!item.longitude && exifData.longitude) item.longitude = exifData.longitude;
+            } catch (exifErr) {
+              console.error(`Failed to parse EXIF for ${item.url}:`, exifErr);
             }
-          } catch (exifErr) {
-            console.error(`Failed to parse EXIF for ${item.url}:`, exifErr);
           }
-        }
 
-        if (item.remoteId) {
-          photo = await prisma.photo.update({
-            where: { id: item.remoteId },
-            data: {
-              url: item.url,
-              altText: item.altText || "Unknown Photo",
-              description: item.description,
-              dateTaken: item.dateTaken ? new Date(item.dateTaken) : null,
-              locationName: item.locationName,
-              albumId: item.albumId,
-              cameraMake: item.cameraMake,
-              cameraModel: item.cameraModel,
-              lensModel: item.lensModel,
-              focalLength: item.focalLength,
-              fNumber: item.fNumber,
-              iso: item.iso,
-              exposureTime: item.exposureTime,
-              fileSize: item.fileSize,
-              width: item.width,
-              height: item.height,
-              latitude: item.latitude,
-              longitude: item.longitude,
-            }
-          });
-        } else {
-          photo = await prisma.photo.create({
-            data: {
-              url: item.url,
-              altText: item.altText || "Unknown Photo",
-              description: item.description,
-              dateTaken: item.dateTaken ? new Date(item.dateTaken) : new Date(),
-              locationName: item.locationName,
-              albumId: item.albumId,
-              cameraMake: item.cameraMake,
-              cameraModel: item.cameraModel,
-              lensModel: item.lensModel,
-              focalLength: item.focalLength,
-              fNumber: item.fNumber,
-              iso: item.iso,
-              exposureTime: item.exposureTime,
-              fileSize: item.fileSize,
-              width: item.width,
-              height: item.height,
-              latitude: item.latitude,
-              longitude: item.longitude,
-              userId: defaultUserId,
-              createdAt: new Date(),
-            }
-          });
+          if (item.remoteId) {
+            photo = await prisma.photo.update({
+              where: { id: item.remoteId },
+              data: {
+                url: item.url,
+                altText: item.altText || "Unknown Photo",
+                description: item.description,
+                dateTaken: item.dateTaken ? new Date(item.dateTaken) : null,
+                locationName: item.locationName,
+                albumId: item.albumId,
+                cameraMake: item.cameraMake,
+                cameraModel: item.cameraModel,
+                lensModel: item.lensModel,
+                focalLength: item.focalLength,
+                fNumber: item.fNumber,
+                iso: item.iso,
+                exposureTime: item.exposureTime,
+                fileSize: item.fileSize,
+                width: item.width,
+                height: item.height,
+                latitude: item.latitude,
+                longitude: item.longitude,
+              }
+            });
+          } else {
+            photo = await prisma.photo.create({
+              data: {
+                url: item.url,
+                altText: item.altText || "Unknown Photo",
+                description: item.description,
+                dateTaken: item.dateTaken ? new Date(item.dateTaken) : new Date(),
+                locationName: item.locationName,
+                albumId: item.albumId,
+                cameraMake: item.cameraMake,
+                cameraModel: item.cameraModel,
+                lensModel: item.lensModel,
+                focalLength: item.focalLength,
+                fNumber: item.fNumber,
+                iso: item.iso,
+                exposureTime: item.exposureTime,
+                fileSize: item.fileSize,
+                width: item.width,
+                height: item.height,
+                latitude: item.latitude,
+                longitude: item.longitude,
+                userId: defaultUserId,
+                createdAt: new Date(),
+              }
+            });
+          }
+          
+          return {
+            localId: item.localId,
+            remoteId: photo.id
+          };
+        } catch (err) {
+          console.error(`Failed to process photo ${item.altText}:`, err);
+          return null;
         }
-        
-        results.push({
-          localId: item.localId,
-          remoteId: photo.id
-        });
-      } catch (err) {
-        console.error(`Failed to process photo ${item.altText}:`, err);
-      }
+      });
+      
+      const chunkResults = await Promise.all(chunkPromises);
+      results.push(...chunkResults.filter(Boolean));
     }
 
     await invalidatePattern("user:*:*");

@@ -1,10 +1,12 @@
 import { prisma } from "./lib/prisma";
 import { syncLocalPhotoToCloud } from "./app/actions/photo-sync";
-
-
+import { evictLruCache } from "./app/actions/cache-eviction";
 
 async function main() {
   console.log("Starting background sync cron job...");
+
+  // Evict old LRU caches if disk is getting full
+  await evictLruCache();
 
   // Find all photos with local URLs
   const pendingPhotos = await prisma.photo.findMany({
