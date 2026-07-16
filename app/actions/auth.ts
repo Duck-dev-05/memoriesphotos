@@ -154,7 +154,7 @@ export async function getStorageUsage() {
     select: { fileSize: true },
   });
 
-  const totalBytes = photos.reduce((sum, photo) => sum + (photo.fileSize || 0), 0);
+  const totalBytes = photos.reduce((sum: number, photo: { fileSize: number | null }) => sum + (photo.fileSize || 0), 0);
   return totalBytes;
 }
 
