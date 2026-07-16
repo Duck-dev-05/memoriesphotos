@@ -15,8 +15,6 @@ export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({ 
     adapter, 
-    // @ts-ignore Prisma 7 typings forbid datasourceUrl when using an adapter, but the Rust engine crashes without it.
-    datasourceUrl: connectionString, 
     log: ['query'] 
   });
 
