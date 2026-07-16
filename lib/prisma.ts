@@ -13,6 +13,11 @@ const adapter = new PrismaPg(pool);
 
 export const prisma =
   globalForPrisma.prisma ||
-  new PrismaClient({ adapter, log: ['query'] });
+  new PrismaClient({ 
+    adapter, 
+    // @ts-ignore Prisma 7 typings forbid datasourceUrl when using an adapter, but the Rust engine crashes without it.
+    datasourceUrl: connectionString, 
+    log: ['query'] 
+  });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
