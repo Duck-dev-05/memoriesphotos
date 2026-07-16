@@ -12,7 +12,7 @@ try {
 
 try {
   const client = createClient({ url: 'file:./dev.db' });
-  const adapter2 = new PrismaLibSql(client);
+  const adapter2 = new PrismaLibSql(client as any);
   console.log("Success with client:", adapter2);
 } catch (e: any) {
   console.log("Error with client:", e.message);
