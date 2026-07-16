@@ -246,7 +246,7 @@ export async function deletePhotosBulk(ids: string[]) {
 
   await prisma.photo.updateMany({
     where: {
-      id: { in: photosCheck.map(p => p.id) }
+      id: { in: photosCheck.map((p: { id: string }) => p.id) }
     },
     data: { deletedAt: new Date() },
   });
@@ -256,7 +256,7 @@ export async function deletePhotosBulk(ids: string[]) {
   revalidatePath("/albums", "layout");
   revalidatePath("/trash", "layout");
 
-  const albumIds = new Set(photosCheck.map(p => p.albumId).filter(Boolean));
+  const albumIds = new Set(photosCheck.map((p: { albumId: string | null }) => p.albumId).filter(Boolean));
   albumIds.forEach(id => revalidatePath(`/albums/${id}`, "layout"));
 }
 
