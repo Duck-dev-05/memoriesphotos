@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   
-  const origin = process.env.NODE_ENV === "production" ? "https://memoriesphotos.vercel.app" : "http://localhost:3003";
+  const origin = new URL(req.url).origin;
   const redirectUri = `${origin}/api/auth/google/callback`;
 
   try {
