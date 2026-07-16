@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { getOptimizedMediaUrl, getSafeUrl } from "@/lib/media";
 import styles from "./page.module.css";
-import { scanAlbumSmartObjects } from "@/app/actions";
 import { useSelection } from "@/app/contexts/SelectionContext";
 import SelectablePhoto from "@/app/components/SelectablePhoto";
 
@@ -26,18 +25,7 @@ export default function SmartFilterGrid({
   const [isScanning, setIsScanning] = useState(false);
   const { isSelectionMode, toggleSelectionMode, isSelected, togglePhoto, selectedPhotos } = useSelection();
 
-  const handleScan = async () => {
-    if (!albumId) return;
-    try {
-      setIsScanning(true);
-      await scanAlbumSmartObjects(albumId);
-    } catch (e) {
-      console.error(e);
-      alert("Lỗi khi quét AI");
-    } finally {
-      setIsScanning(false);
-    }
-  };
+
 
   const handleSelectAll = () => {
     // Only select photos visible in current filter
@@ -141,17 +129,7 @@ export default function SmartFilterGrid({
                 </>
               )}
             </button>
-
-            {albumId && (
-              <button
-                onClick={handleScan}
-                disabled={isScanning || isSelectionMode}
-                className={styles.filterBtn}
-                style={{ borderStyle: "dashed", color: "var(--accent-1)", borderColor: "var(--accent-1)" }}
-              >
-                {isScanning ? "Đang quét AI..." : "✨ Quét AI"}
-              </button>
-            )}
+            {/* AI Scan button removed */}
           </div>
         </div>
       )}
