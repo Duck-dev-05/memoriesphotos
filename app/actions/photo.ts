@@ -10,13 +10,8 @@ import { checkAuthServerAction, createSessionCookie, deleteSessionCookie, getSes
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
 import { getCache, setCache, invalidatePattern, clearUserCache } from "@/lib/redis";
-import { pipeline, env } from "@xenova/transformers";
 import { syncLocalPhotoToCloud } from "./photo-sync";
 import { isVideoFile, getVideoSizeLimitBytes, getUserStorageLimitBytes, getStorageUsage, saveUploadedFileBufferLocally } from "./auth";
-
-// Optional: don't load local models, fetch from HuggingFace
-env.allowLocalModels = false;
-
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -715,6 +710,8 @@ export async function scanAlbumSmartObjects(albumId: string) {
     "hair drier": "Máy sấy tóc", toothbrush: "Bàn chải đánh răng"
   };
 
+  const { pipeline, env } = await import("@xenova/transformers");
+  env.allowLocalModels = false;
   const detector = await pipeline("object-detection", "Xenova/detr-resnet-50");
 
   for (const photo of photos) {
