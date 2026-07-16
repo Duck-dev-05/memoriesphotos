@@ -1,4 +1,4 @@
-const { PrismaClient } = require('../app/generated/db/client');
+const { PrismaClient } = require('../app/generated/database/client');
 const { PrismaLibSql } = require('@prisma/adapter-libsql');
 const { createClient } = require('@libsql/client');
 

@@ -1,4 +1,4 @@
-const { PrismaClient } = require('./app/generated/db');
+const { PrismaClient } = require('./app/generated/database');
 const { PrismaLibSql } = require('@prisma/adapter-libsql');
 
 const connectionString = process.env.DATABASE_URL || 'file:./dev.db';
