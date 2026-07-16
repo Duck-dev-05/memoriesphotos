@@ -29,7 +29,7 @@ export default async function StoryDetailPage({
     select: { id: true, url: true, altText: true }
   }) : [];
 
-  const currentPhotoIds = story.photos.map(p => p.id);
+  const currentPhotoIds = story.photos.map((p: { id: string }) => p.id);
 
   return (
     <main>
