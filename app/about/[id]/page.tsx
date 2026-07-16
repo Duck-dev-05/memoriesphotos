@@ -63,10 +63,10 @@ export default async function StoryDetailPage({
 
       <div className={styles.container}>
         <StoryContentEditor storyId={story.id} initialContent={story.content || ""} />
-        <StoryPhotoPicker storyId={story.id} allPhotos={allPhotos as any} currentPhotoIds={currentPhotoIds} />
+        <StoryPhotoPicker storyId={story.id} allPhotos={allPhotos} currentPhotoIds={currentPhotoIds} />
 
         <div className={styles.grid}>
-          {story.photos.map(photo => (
+          {story.photos.map((photo: { id: string; url: string | null; altText: string | null }) => (
              <div key={photo.id} style={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '12px' }}>
                 <Link href={`/photo/${photo.id}`}>
                     {photo.url?.match(/\.(mp4|webm|ogg|mov)$/i) ? (
