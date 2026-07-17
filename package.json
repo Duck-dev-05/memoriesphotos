@@ -7,9 +7,6 @@
     "build": "next build --webpack",
     "start": "next start -p 3003",
     "lint": "eslint",
-    "backfill": "npx tsx backfill-filesize.ts",
-    "sync": "npx tsx background-sync.ts",
-    "sync-models": "node scripts/sync-models.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {
