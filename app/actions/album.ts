@@ -73,6 +73,7 @@ export async function createAlbum(formData: FormData) {
   await clearUserCache(session.userId);
   revalidatePath("/albums", "layout");
   revalidatePath("/", "layout");
+  
   return album;
 }
 
