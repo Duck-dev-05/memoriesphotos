@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clearUserCache } from "@/lib/redis";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,6 +14,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         userId: session.userId
       }
     });
+
+    await clearUserCache(session.userId);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -31,6 +34,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       where: { id: id, userId: session.userId },
       data: { name: body.name }
     });
+
+    await clearUserCache(session.userId);
 
     return NextResponse.json({ album });
   } catch (error: any) {

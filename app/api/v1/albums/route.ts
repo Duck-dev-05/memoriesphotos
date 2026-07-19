@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clearUserCache } from "@/lib/redis";
 
 export async function GET(request: Request) {
   try {
@@ -44,6 +45,8 @@ export async function POST(request: Request) {
         userId: session.userId
       }
     });
+
+    await clearUserCache(session.userId);
 
     return NextResponse.json({ album }, { status: 201 });
   } catch (error: any) {
