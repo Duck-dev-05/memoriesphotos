@@ -10,7 +10,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const photo = await prisma.photo.update({
       where: { id: id, userId: session.userId },
-      data: { albumId: body.albumId !== undefined ? body.albumId : undefined }
+      data: { 
+        albumId: body.albumId !== undefined ? body.albumId : undefined,
+        description: body.description !== undefined ? body.description : undefined
+      }
     });
 
     return NextResponse.json({ photo });
@@ -25,8 +28,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const session = await checkApiAuth(request);
     const { id } = await params;
 
-    await prisma.photo.delete({
-      where: { id: id, userId: session.userId }
+    await prisma.photo.update({
+      where: { id: id, userId: session.userId },
+      data: { deletedAt: new Date() }
     });
 
     return NextResponse.json({ success: true });
