@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await checkApiAuth(request);
+    const { id } = await params;
 
     await prisma.album.delete({
       where: {
-        id: params.id,
+        id: id,
         userId: session.userId
       }
     });
@@ -20,13 +21,14 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await checkApiAuth(request);
     const body = await request.json();
+    const { id } = await params;
 
     const album = await prisma.album.update({
-      where: { id: params.id, userId: session.userId },
+      where: { id: id, userId: session.userId },
       data: { name: body.name }
     });
 
