@@ -5,6 +5,13 @@ import exifr from "exifr";
 import { syncLocalPhotoToCloud } from "@/app/actions/photo-sync";
 import { isVideoFile, getVideoSizeLimitBytes, getUserStorageLimitBytes, getStorageUsage, saveUploadedFileBufferLocally } from "@/app/actions/auth";
 import { clearUserCache } from "@/lib/redis";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: Request) {
   try {
@@ -41,7 +48,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Storage limit exceeded. You have used ${usedGB.toFixed(2)}GB out of ${limitGB}GB limit` }, { status: 400 });
     }
 
-    const uploadUrl = await saveUploadedFileBufferLocally(buffer, file);
+    let uploadUrl = "";
+    let cloudUrl: string | null = null;
+    const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+    
+    if (process.env.CLOUDINARY_CLOUD_NAME) {
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "memoriesphotos",
+            resource_type: "auto",
+            public_id: `${Date.now()}_${file.name.split('.')[0]}`,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else if (result) resolve(result);
+            else reject(new Error("Cloudinary upload failed"));
+          }
+        );
+        uploadStream.end(buffer);
+      });
+      uploadUrl = uploadResult.secure_url;
+      cloudUrl = uploadResult.secure_url;
+    } else if (isVercel && (process.env.IMGBB_API_KEY || process.env.NEXT_PUBLIC_IMGBB_API_KEY) && !isVideo) {
+        const imgbbApiKey = process.env.IMGBB_API_KEY || process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+        const base64Image = buffer.toString('base64');
+        const fd = new FormData();
+        fd.append('image', base64Image);
+
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+            method: 'POST',
+            body: fd,
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.data?.url) {
+                uploadUrl = data.data.url;
+                cloudUrl = data.data.url;
+            }
+        }
+    }
+    
+    if (!uploadUrl) {
+      if (isVercel) {
+        return NextResponse.json({ error: "No cloud storage configured on read-only filesystem." }, { status: 500 });
+      }
+      uploadUrl = await saveUploadedFileBufferLocally(buffer, file);
+    }
 
     let dateTaken = null;
     let exifDetails: any = {};
