@@ -363,3 +363,17 @@ export async function uploadFileLocally(formData: FormData): Promise<string> {
   return saveUploadedFileBufferLocally(buffer, file);
 }
 
+export async function deleteAccount() {
+  const session = await checkAuthServerAction();
+  
+  await prisma.user.delete({
+    where: { id: session.userId }
+  });
+
+  await deleteSessionCookie();
+  
+  // Use absolute path for import in actions if redirect is needed
+  const { redirect } = await import("next/navigation");
+  redirect("/");
+}
+

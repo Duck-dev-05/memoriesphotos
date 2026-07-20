@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { updateProfile, changePassword, getStorageUsage } from "@/app/actions";
+import { updateProfile, changePassword, getStorageUsage, deleteAccount } from "@/app/actions";
 import Image from "next/image";
 
 function formatBytes(bytes: number) {
@@ -97,6 +97,22 @@ export default async function SettingsPage() {
             <div style={{ color: 'var(--text-secondary)' }}>Album đã tạo</div>
           </div>
         </div>
+      </section>
+
+      <section style={{ background: 'rgba(244, 63, 94, 0.05)', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(244, 63, 94, 0.2)', marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: '#f43f5e' }}>Khu vực nguy hiểm</h2>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+          Hành động này không thể hoàn tác. Vui lòng cân nhắc kỹ trước khi xóa tài khoản. Việc xóa tài khoản sẽ xóa toàn bộ dữ liệu, hình ảnh, và bộ sưu tập của bạn.
+        </p>
+        <form action={deleteAccount}>
+          <button type="submit" className="btn" style={{ background: '#f43f5e', color: 'white' }} onClick={(e) => {
+            if (!confirm('Bạn có chắc chắn muốn xóa tài khoản không? Hành động này không thể hoàn tác!')) {
+              e.preventDefault();
+            }
+          }}>
+            Xóa tài khoản
+          </button>
+        </form>
       </section>
     </main>
   );

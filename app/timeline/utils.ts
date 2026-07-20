@@ -33,12 +33,18 @@ export function formatYearLabel(dateStr: string): string {
 }
 
 export function groupPhotosByDate(photos: any[]) {
-  const datedPhotos = photos.filter((p) => p.dateTaken !== null);
-  const undatedPhotos = photos.filter((p) => p.dateTaken === null);
+  // Fallback to createdAt if dateTaken is missing
+  const processedPhotos = photos.map(p => ({
+    ...p,
+    dateTaken: p.dateTaken || p.createdAt || new Date().toISOString()
+  }));
+
+  const datedPhotos = processedPhotos;
+  const undatedPhotos: any[] = []; // No longer used as everything falls back to upload date
 
   const byDay: Record<string, typeof photos> = {};
   for (const photo of datedPhotos) {
-    const key = getDayKey(new Date(photo.dateTaken!));
+    const key = getDayKey(new Date(photo.dateTaken));
     if (!byDay[key]) byDay[key] = [];
     byDay[key].push(photo);
   }

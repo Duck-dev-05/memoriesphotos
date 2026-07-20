@@ -35,3 +35,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message || "Unauthorized" }, { status: 401 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await checkApiAuth(request);
+    
+    await prisma.user.delete({
+      where: { id: session.userId }
+    });
+
+    return NextResponse.json({ success: true, message: "Account deleted successfully" });
+  } catch (error: any) {
+    console.error("Failed to delete account:", error);
+    return NextResponse.json({ error: error.message || "Failed to delete account" }, { status: 500 });
+  }
+}
