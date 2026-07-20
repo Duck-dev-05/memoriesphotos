@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(request: Request, { params }: { params: { id: string, shareId: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string, shareId: string }> }) {
   try {
+    const { id, shareId } = await params;
     const session = await checkApiAuth(request);
     const body = await request.json();
     const { role } = body;
 
     const album = await prisma.album.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!album || album.userId !== session.userId) {
@@ -17,7 +18,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     const share = await prisma.albumShare.update({
-      where: { id: params.shareId },
+      where: { id: shareId },
       data: { role }
     });
 
@@ -28,12 +29,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string, shareId: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string, shareId: string }> }) {
   try {
+    const { id, shareId } = await params;
     const session = await checkApiAuth(request);
 
     const album = await prisma.album.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!album || album.userId !== session.userId) {
@@ -41,7 +43,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     await prisma.albumShare.delete({
-      where: { id: params.shareId }
+      where: { id: shareId }
     });
 
     return NextResponse.json({ success: true });

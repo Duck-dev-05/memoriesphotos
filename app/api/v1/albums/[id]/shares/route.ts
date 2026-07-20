@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await checkApiAuth(request);
 
     const album = await prisma.album.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!album) {
@@ -22,7 +23,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       const myShare = await prisma.albumShare.findUnique({
         where: {
           albumId_userId: {
-            albumId: params.id,
+            albumId: id,
             userId: session.userId,
           }
         }
@@ -35,7 +36,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     const shares = await prisma.albumShare.findMany({
-      where: { albumId: params.id },
+      where: { albumId: id },
       include: {
         user: {
           select: {

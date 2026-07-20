@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await checkApiAuth(request);
     const body = await request.json();
     const { email, role } = body;
@@ -13,7 +14,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
 
     const album = await prisma.album.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!album || album.userId !== session.userId) {
@@ -35,7 +36,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const share = await prisma.albumShare.upsert({
       where: {
         albumId_userId: {
-          albumId: params.id,
+          albumId: id,
           userId: invitedUser.id,
         },
       },
@@ -43,7 +44,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         role: role || "VIEWER",
       },
       create: {
-        albumId: params.id,
+        albumId: id,
         userId: invitedUser.id,
         role: role || "VIEWER",
       },
