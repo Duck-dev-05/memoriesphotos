@@ -214,7 +214,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const tagConnectOrCreate = parsedTags.map((tag) => ({
+    const tagConnectOrCreate = parsedTags.map((tag: string) => ({
       where: { name: tag },
       create: { name: tag },
     }));

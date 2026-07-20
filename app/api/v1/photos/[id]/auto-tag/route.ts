@@ -93,14 +93,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     
     // Get existing tags to avoid duplicates
     const existingTags = photo.tags.map(t => t.name.toLowerCase());
-    const newTags = aiTags.filter(tag => !existingTags.includes(tag));
+    const newTags = aiTags.filter((tag: string) => !existingTags.includes(tag));
 
     if (newTags.length === 0) {
         return NextResponse.json({ photo, message: "No new tags found" }, { status: 200 });
     }
 
     // Connect or create new tags
-    const tagConnectOrCreate = newTags.map((tag) => ({
+    const tagConnectOrCreate = newTags.map((tag: string) => ({
       where: { name: tag },
       create: { name: tag },
     }));
