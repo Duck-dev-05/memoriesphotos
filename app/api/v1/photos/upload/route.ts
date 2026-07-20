@@ -169,34 +169,48 @@ export async function POST(request: Request) {
       parsedTags = manualTags.split(",").map(t => t.trim()).filter(t => t);
     }
 
-    // Auto-tagging with Gemini LLM
-    if (!isVideo && process.env.GEMINI_API_KEY) {
+    // Auto-tagging with Groq LLM
+    if (!isVideo && process.env.GROQ_API_KEY) {
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: 'Analyze this image and provide exactly 5 relevant keywords/tags describing its contents. Output ONLY a comma-separated list of lowercase tags without any extra text, punctuation, or formatting.' },
-                { inlineData: { data: buffer.toString("base64"), mimeType: file.type || "image/jpeg" } }
-              ]
-            }
-          ]
+        const groqKey = process.env.GROQ_API_KEY;
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama-3.2-11b-vision-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Analyze this image and provide exactly 5 relevant keywords/tags describing its contents. Output ONLY a comma-separated list of lowercase tags without any extra text, punctuation, or formatting." },
+                  { type: "image_url", image_url: { url: `data:${file.type || 'image/jpeg'};base64,${buffer.toString("base64")}` } }
+                ]
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 50
+          })
         });
         
-        if (response.text) {
-          const aiTags = response.text.split(",").map(t => t.trim().toLowerCase()).filter(t => t);
+        const data = await res.json();
+        const responseText = data.choices?.[0]?.message?.content;
+        
+        if (responseText) {
+          const aiTags = responseText.split(",").map((t: string) => t.trim().toLowerCase()).filter((t: string) => t);
           // Merge AI tags with manual tags, avoiding duplicates
-          aiTags.forEach(tag => {
+          aiTags.forEach((tag: string) => {
             if (!parsedTags.includes(tag)) {
               parsedTags.push(tag);
             }
           });
+        } else {
+          console.error("Groq Auto-tagging returned unexpected format:", data);
         }
       } catch (aiError) {
-        console.error("Gemini Auto-tagging failed:", aiError);
+        console.error("Groq Auto-tagging failed:", aiError);
       }
     }
 

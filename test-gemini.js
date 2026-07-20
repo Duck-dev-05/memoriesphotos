@@ -9,7 +9,7 @@ async function run() {
     console.log("Buffer created");
     
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-pro-latest',
       contents: [
         {
           role: 'user',

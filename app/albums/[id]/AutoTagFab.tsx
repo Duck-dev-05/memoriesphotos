@@ -45,9 +45,9 @@ export default function AutoTagFab({ albumId }: { albumId: string }) {
           }
         }
         
-        // Add a 4.5s delay to avoid exceeding Gemini API rate limits (15 requests/min on free tier)
+        // Add a 2.5s delay to avoid exceeding Groq API rate limits (30 requests/min on free tier)
         if (i < untaggedPhotos.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 4500));
+          await new Promise(resolve => setTimeout(resolve, 2500));
         }
       }
       

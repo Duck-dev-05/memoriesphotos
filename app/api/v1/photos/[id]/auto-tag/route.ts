@@ -48,26 +48,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return NextResponse.json({ error: "Unsupported image format or URL" }, { status: 400 });
     }
 
-    // Call Gemini to generate tags
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: 'Analyze this image and provide exactly 5 relevant keywords/tags describing its contents. Output ONLY a comma-separated list of lowercase tags without any extra text, punctuation, or formatting.' },
-            { inlineData: { data: buffer.toString("base64"), mimeType: mimeType } }
-          ]
-        }
-      ]
-    });
+    // Call Groq LLM to generate tags
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+        return NextResponse.json({ error: "Groq API key is not configured" }, { status: 500 });
+    }
 
-    if (!response.text) {
+    const resApi = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${groqKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.2-11b-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Analyze this image and provide exactly 5 relevant keywords/tags describing its contents. Output ONLY a comma-separated list of lowercase tags without any extra text, punctuation, or formatting." },
+              { type: "image_url", image_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}` } }
+            ]
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 50
+      })
+    });
+    
+    if (!resApi.ok) {
+        const err = await resApi.text();
+        console.error("Groq API Error:", err);
+        return NextResponse.json({ error: "Groq API returned an error" }, { status: resApi.status });
+    }
+    
+    const data = await resApi.json();
+    const responseText = data.choices?.[0]?.message?.content;
+
+    if (!responseText) {
         return NextResponse.json({ error: "Failed to generate tags" }, { status: 500 });
     }
 
-    const aiTags = response.text.split(",").map(t => t.trim().toLowerCase()).filter(t => t);
+    const aiTags = responseText.split(",").map((t: string) => t.trim().toLowerCase()).filter((t: string) => t);
     
     // Get existing tags to avoid duplicates
     const existingTags = photo.tags.map(t => t.name.toLowerCase());
