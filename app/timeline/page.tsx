@@ -3,9 +3,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import BackToTopButton from "./BackToTopButton";
 import { TimelineHero } from "./components/TimelineHero";
-import { YearNavigation } from "./components/YearNavigation";
-import { YearSection } from "./components/YearSection";
-import { UndatedSection } from "./components/UndatedSection";
+import { TimelineClient } from "./components/TimelineClient";
 import { TimelineFooter } from "./components/TimelineFooter";
 import { EmptyState } from "./components/EmptyState";
 import { groupPhotosByDate, formatMonthHeading, formatDayLabel } from "./utils";
@@ -48,23 +46,14 @@ export default async function TimelinePage({
         <EmptyState />
       ) : (
         <div className="tl-content">
-          {allYearKeys.length > 1 && <YearNavigation yearKeys={allYearKeys} selectedYear={year} />}
-
-          {displayYearKeys.map((yearKey) => (
-            <YearSection
-              key={yearKey}
-              yearKey={yearKey}
-              monthsInYear={byYear[yearKey]}
-              byDay={byDay}
-              formatMonthHeading={formatMonthHeading}
-              formatDayLabel={formatDayLabel}
-            />
-          ))}
-
-          {undatedPhotos.length > 0 && !year && (
-            <UndatedSection undatedPhotos={undatedPhotos} />
-          )}
-
+          <TimelineClient 
+            allYearKeys={allYearKeys}
+            displayYearKeys={displayYearKeys}
+            byYear={byYear}
+            byDay={byDay}
+            undatedPhotos={undatedPhotos}
+            year={year}
+          />
           <TimelineFooter totalAll={totalAll} yearCount={allYearKeys.length} />
         </div>
       )}

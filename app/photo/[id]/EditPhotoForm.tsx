@@ -53,6 +53,33 @@ export default function EditPhotoForm({ photo, albums }: EditPhotoFormProps) {
     );
   }
 
+  const tagsInputRef = React.useRef<HTMLInputElement>(null);
+  const [isAutoTagging, setIsAutoTagging] = useState(false);
+
+  async function handleAutoTag() {
+    setIsAutoTagging(true);
+    try {
+      const res = await fetch(`/api/v1/photos/${photo.id}/auto-tag`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.newTags && data.newTags.length > 0) {
+        if (tagsInputRef.current) {
+          const currentVal = tagsInputRef.current.value;
+          const separator = currentVal.trim() && !currentVal.trim().endsWith(',') ? ', ' : '';
+          tagsInputRef.current.value = currentVal + separator + data.newTags.join(', ');
+        }
+      } else if (res.ok && data.message) {
+        alert(data.message);
+      } else {
+        alert(data.error || "Failed to auto-tag");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error auto-tagging");
+    } finally {
+      setIsAutoTagging(false);
+    }
+  }
+
   return (
     <form action={actionWrapper} style={{ width: "100%", maxWidth: "500px", margin: "0 auto 2rem", textAlign: "left" }}>
       <div className="form-group">
@@ -79,11 +106,25 @@ export default function EditPhotoForm({ photo, albums }: EditPhotoFormProps) {
       </div>
 
       <div className="form-group">
-        <label htmlFor="tags" className="form-label">Thẻ (cách nhau bằng dấu phẩy)</label>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+          <label htmlFor="tags" className="form-label" style={{ marginBottom: 0 }}>Thẻ (cách nhau bằng dấu phẩy)</label>
+          <button 
+            type="button" 
+            onClick={handleAutoTag} 
+            disabled={isAutoTagging}
+            style={{ 
+              background: 'rgba(255,255,255,0.1)', border: '1px solid var(--accent-1)', color: 'var(--accent-1)', 
+              padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+            }}
+          >
+            {isAutoTagging ? "Đang tạo..." : "✨ Tạo tự động"}
+          </button>
+        </div>
         <input 
           type="text" 
           id="tags" 
           name="tags" 
+          ref={tagsInputRef}
           defaultValue={photo.tags} 
           className="form-input" 
           placeholder="ví dụ: sinh nhật, gia đình, bạn bè"

@@ -77,6 +77,7 @@ import { SelectionProvider } from "./contexts/SelectionContext";
 import FloatingActionBar from "./components/FloatingActionBar";
 import ProgressBar from "./components/ProgressBar";
 import AutoRefreshProvider from "./components/AutoRefreshProvider";
+import GlobalShortcuts from "./components/GlobalShortcuts";
 
 export default async function RootLayout({
   children,
@@ -104,6 +105,7 @@ export default async function RootLayout({
           `
         }} />
         <GlobalDropPreventer />
+        <GlobalShortcuts />
         <div className="paper-texture"></div>
         <Navbar session={session} />
         <DragDropUploader>
