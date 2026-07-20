@@ -10,6 +10,7 @@ import styles from "./page.module.css";
 import SmartFilterGrid from "./SmartFilterGrid";
 import EditAlbumModal from "./EditAlbumModal";
 import ShareButton from "./ShareButton";
+import AutoTagFab from "./AutoTagFab";
 
 export default async function AlbumDetail({
   params,
@@ -302,6 +303,7 @@ export default async function AlbumDetail({
       {/* ── Floating Action Buttons (auth only) ── */}
       {isOwner && (
         <div className={styles.fab}>
+          <AutoTagFab albumId={album.id} />
           <ShareButton albumId={album.id} existingToken={album.shareToken} isCollaborative={album.isCollaborative} />
           <EditAlbumModal album={album} />
           <form action={handleDelete} style={{ margin: 0 }}>

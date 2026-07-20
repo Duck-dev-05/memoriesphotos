@@ -160,27 +160,6 @@ export default function SmartFilterGrid({
                 </>
               )}
             </button>
-            <button
-              onClick={handleScanAlbum}
-              disabled={isScanning}
-              className={styles.filterBtn}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                background: isScanning ? "var(--bg-secondary)" : "var(--accent-1)",
-                color: isScanning ? "var(--text-secondary)" : "white",
-                border: "none",
-                cursor: isScanning ? "not-allowed" : "pointer"
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
-                <path d="M12 12 2.1 7.1" />
-                <path d="M12 12l9.9 4.9" />
-              </svg>
-              {isScanning ? scanProgress : "Quét AI"}
-            </button>
           </div>
         </div>
       )}

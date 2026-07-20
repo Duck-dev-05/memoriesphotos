@@ -709,4 +709,40 @@ export async function getAvailableFilters() {
 }
 
 
-
+export async function getUntaggedPhotosInAlbumTree(albumId: string) {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+  
+  // Recursively fetch all photos in album and its sub-albums
+  // Since Prisma doesn't do deep recursion natively, we'll fetch all albums for this user 
+  // and construct the tree, then collect the photo IDs.
+  
+  const allAlbums = await prisma.album.findMany({
+    where: { userId: session.userId, deletedAt: null },
+    select: { id: true, parentId: true }
+  });
+  
+  const targetAlbumIds = new Set<string>();
+  
+  // Helper to find all descendants
+  const addDescendants = (parentId: string) => {
+    targetAlbumIds.add(parentId);
+    const children = allAlbums.filter(a => a.parentId === parentId);
+    children.forEach(c => addDescendants(c.id));
+  };
+  
+  addDescendants(albumId);
+  
+  // Fetch untagged photos in those albums
+  const untaggedPhotos = await prisma.photo.findMany({
+    where: {
+      userId: session.userId,
+      albumId: { in: Array.from(targetAlbumIds) },
+      deletedAt: null,
+      tags: { none: {} } // 0 tags
+    },
+    select: { id: true, url: true }
+  });
+  
+  return untaggedPhotos;
+}
