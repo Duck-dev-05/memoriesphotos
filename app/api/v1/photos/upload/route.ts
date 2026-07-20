@@ -180,8 +180,8 @@ export async function POST(request: Request) {
 
         // 2. Location
         if (locationName) {
-          const parts = locationName.split(",").map(p => p.trim().toLowerCase());
-          parts.forEach(p => { if (p) metadataTags.add(p); });
+          const parts = locationName.split(",").map((p: string) => p.trim().toLowerCase());
+          parts.forEach((p: string) => { if (p) metadataTags.add(p); });
         }
 
         // 3. Date Taken
@@ -198,8 +198,8 @@ export async function POST(request: Request) {
         // 4. Album (Fetch album title if uploaded to an album)
         if (albumId) {
           const album = await prisma.album.findUnique({ where: { id: albumId } });
-          if (album && album.title) {
-            metadataTags.add(album.title.toLowerCase().trim());
+          if (album && album.name) {
+            metadataTags.add(album.name.toLowerCase().trim());
           }
         }
 

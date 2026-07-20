@@ -25,8 +25,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // 2. Location
     if (photo.locationName) {
       // Add the whole location name if it's short, or split it by commas
-      const parts = photo.locationName.split(",").map(p => p.trim().toLowerCase());
-      parts.forEach(p => { if (p) metadataTags.add(p); });
+      const parts = photo.locationName.split(",").map((p: string) => p.trim().toLowerCase());
+      parts.forEach((p: string) => { if (p) metadataTags.add(p); });
     }
 
     // 3. Date Taken (Year and Month)
@@ -41,8 +41,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     // 4. Album Name
-    if (photo.album && photo.album.title) {
-      metadataTags.add(photo.album.title.toLowerCase().trim());
+    if (photo.album && photo.album.name) {
+      metadataTags.add(photo.album.name.toLowerCase().trim());
     }
 
     const aiTags = Array.from(metadataTags).filter(t => t.length > 0 && t.length < 50);
