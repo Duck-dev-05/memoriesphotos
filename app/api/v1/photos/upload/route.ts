@@ -169,48 +169,50 @@ export async function POST(request: Request) {
       parsedTags = manualTags.split(",").map(t => t.trim()).filter(t => t);
     }
 
-    // Auto-tagging with Groq LLM
-    if (!isVideo && process.env.GROQ_API_KEY) {
+    // Auto-tagging with Metadata
+    if (!isVideo) {
       try {
-        const groqKey = process.env.GROQ_API_KEY;
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${groqKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "llama-3.2-90b-vision-preview",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: "Analyze this image and provide exactly 5 relevant keywords/tags describing its contents. Output ONLY a comma-separated list of lowercase tags without any extra text, punctuation, or formatting." },
-                  { type: "image_url", image_url: { url: `data:${file.type || 'image/jpeg'};base64,${buffer.toString("base64")}` } }
-                ]
-              }
-            ],
-            temperature: 0.2,
-            max_tokens: 50
-          })
-        });
-        
-        const data = await res.json();
-        const responseText = data.choices?.[0]?.message?.content;
-        
-        if (responseText) {
-          const aiTags = responseText.split(",").map((t: string) => t.trim().toLowerCase()).filter((t: string) => t);
-          // Merge AI tags with manual tags, avoiding duplicates
-          aiTags.forEach((tag: string) => {
-            if (!parsedTags.includes(tag)) {
-              parsedTags.push(tag);
-            }
-          });
-        } else {
-          console.error("Groq Auto-tagging returned unexpected format:", data);
+        const metadataTags = new Set<string>();
+
+        // 1. Camera Make & Model
+        if (exifDetails.cameraMake) metadataTags.add(exifDetails.cameraMake.toLowerCase().trim());
+        if (exifDetails.cameraModel) metadataTags.add(exifDetails.cameraModel.toLowerCase().trim());
+
+        // 2. Location
+        if (locationName) {
+          const parts = locationName.split(",").map(p => p.trim().toLowerCase());
+          parts.forEach(p => { if (p) metadataTags.add(p); });
         }
-      } catch (aiError) {
-        console.error("Groq Auto-tagging failed:", aiError);
+
+        // 3. Date Taken
+        if (dateTaken) {
+          const date = new Date(dateTaken);
+          const year = date.getFullYear().toString();
+          metadataTags.add(year);
+          
+          const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+          const month = monthNames[date.getMonth()];
+          metadataTags.add(month);
+        }
+
+        // 4. Album (Fetch album title if uploaded to an album)
+        if (albumId) {
+          const album = await prisma.album.findUnique({ where: { id: albumId } });
+          if (album && album.title) {
+            metadataTags.add(album.title.toLowerCase().trim());
+          }
+        }
+
+        const newTags = Array.from(metadataTags).filter(t => t.length > 0 && t.length < 50);
+        
+        // Merge AI tags with manual tags, avoiding duplicates
+        newTags.forEach((tag: string) => {
+          if (!parsedTags.includes(tag)) {
+            parsedTags.push(tag);
+          }
+        });
+      } catch (err) {
+        console.error("Metadata Auto-tagging failed during upload:", err);
       }
     }
 

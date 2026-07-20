@@ -44,11 +44,7 @@ export default function AutoTagFab({ albumId }: { albumId: string }) {
             alert(`Lỗi quét ảnh đầu tiên: ${err.message}`);
           }
         }
-        
-        // Add a 2.5s delay to avoid exceeding Groq API rate limits (30 requests/min on free tier)
-        if (i < untaggedPhotos.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2500));
-        }
+        // Removed delay because metadata tagging is instant and free!
       }
       
       alert(`Đã tự động gắn thẻ thành công ${successCount}/${untaggedPhotos.length} ảnh trong toàn bộ album.`);
@@ -69,15 +65,16 @@ export default function AutoTagFab({ albumId }: { albumId: string }) {
       className={`${styles.fabBtn} ${styles.fabAdd}`}
       style={{ 
         background: isScanning ? "var(--bg-secondary)" : "var(--accent-1)",
-        color: isScanning ? "var(--text-secondary)" : "white"
+        color: isScanning ? "var(--text-secondary)" : "white",
+        marginBottom: "60px"
       }}
+      title="Tự động gắn thẻ ảnh (Metadata)"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
-        <path d="M12 12 2.1 7.1" />
-        <path d="M12 12l9.9 4.9" />
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" />
       </svg>
-      {isScanning ? progress : "Quét AI"}
+      {isScanning ? progress : "Tự động Gắn thẻ"}
     </button>
   );
 }
