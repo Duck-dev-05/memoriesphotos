@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useTransition } from "react";
 import styles from "./page.module.css";
-import { generateShareLink, removeShareLink, toggleCollaborative } from "@/app/actions";
+import { generateShareLink, removeShareLink, toggleCollaborative, inviteUserToAlbum, getAlbumShares, updateAlbumShareRole, removeAlbumShare } from "@/app/actions";
+import { Trash2 } from "lucide-react";
 
 export default function ShareButton({ albumId, existingToken, isCollaborative = false }: { albumId: string, existingToken?: string | null, isCollaborative?: boolean }) {
   const [token, setToken] = useState(existingToken);
@@ -10,9 +11,28 @@ export default function ShareButton({ albumId, existingToken, isCollaborative = 
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleOpenModal = () => {
-    setIsOpen(true);
+  // Email Invite State
+  const [shares, setShares] = useState<any[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("VIEWER");
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (isOpen) fetchShares();
+  }, [isOpen]);
+
+  const fetchShares = () => {
+    startTransition(async () => {
+      try {
+        const data = await getAlbumShares(albumId);
+        setShares(data);
+      } catch (err) {
+        console.error(err);
+      }
+    });
   };
+
+  const handleOpenModal = () => setIsOpen(true);
 
   const handleGenerateLink = async () => {
     try {
@@ -40,11 +60,34 @@ export default function ShareButton({ albumId, existingToken, isCollaborative = 
     try {
       await removeShareLink(albumId);
       setToken(null);
-      setIsOpen(false);
     } catch (e) {
       console.error(e);
       alert("Lỗi khi tắt chia sẻ.");
     }
+  };
+
+  const handleInvite = () => {
+    if (!inviteEmail) return;
+    startTransition(async () => {
+      try {
+        await inviteUserToAlbum(albumId, inviteEmail, inviteRole);
+        setInviteEmail("");
+        fetchShares();
+      } catch (err: any) {
+        alert(err.message || "Lỗi khi mời người dùng");
+      }
+    });
+  };
+
+  const handleRemoveShare = (shareId: string) => {
+    startTransition(async () => {
+      try {
+        await removeAlbumShare(shareId);
+        fetchShares();
+      } catch (err) {
+        alert("Xóa quyền truy cập thất bại");
+      }
+    });
   };
 
   const getUrl = () => {
@@ -59,34 +102,11 @@ export default function ShareButton({ albumId, existingToken, isCollaborative = 
 
   const handleCopy = () => {
     if (!url) return;
-    
-    let success = false;
-    
-    if (inputRef.current) {
-      inputRef.current.select();
-      inputRef.current.setSelectionRange(0, 99999);
-      try {
-        success = document.execCommand('copy');
-      } catch (err) {
-        success = false;
-      }
-    }
-
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url)
-        .then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 3000);
-        })
-        .catch(() => {
-          alert("Trình duyệt chặn copy tự động. Vui lòng copy thủ công!");
-        });
-    } else {
-      alert("Trình duyệt chặn copy tự động. Vui lòng copy thủ công!");
-    }
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      });
   };
 
   return (
@@ -108,136 +128,99 @@ export default function ShareButton({ albumId, existingToken, isCollaborative = 
 
       {isOpen && (
         <div className={styles.shareOverlay} onClick={() => setIsOpen(false)}>
-          <div className={styles.shareModal} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.shareModal} onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
             <div className={styles.shareModalHeader}>
               <h3 className={styles.shareModalTitle}>Chia sẻ Album</h3>
-              <button 
-                className={styles.shareModalClose}
-                onClick={() => setIsOpen(false)}
-              >
-                ✕
-              </button>
+              <button className={styles.shareModalClose} onClick={() => setIsOpen(false)}>✕</button>
             </div>
             
-            {!token ? (
-              <div style={{ textAlign: "center", padding: "2rem 0" }}>
-                <p style={{ marginBottom: "1.5rem", color: "var(--text-secondary)" }}>Album này hiện đang ở chế độ riêng tư. Bật chia sẻ để lấy link gửi cho bạn bè.</p>
-                <button
-                  type="button"
-                  onClick={handleGenerateLink}
-                  className="btn btn-primary"
-                  style={{ width: "100%", padding: "0.8rem", fontWeight: "bold" }}
+            {/* Link Sharing Section */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 600 }}>Liên kết công khai</h4>
+              {!token ? (
+                <button onClick={handleGenerateLink} className="btn btn-primary" style={{ width: "100%", padding: "0.8rem", fontWeight: "bold" }}>
+                  Bật chia sẻ bằng liên kết
+                </button>
+              ) : (
+                <>
+                  <div className={styles.shareLinkBox}>
+                    <div className={styles.shareLinkInputGroup}>
+                      <input ref={inputRef} type="text" className={styles.shareLinkInput} value={url} readOnly onClick={(e) => e.currentTarget.select()} />
+                      <button type="button" className={`${styles.shareLinkCopyBtn} ${copied ? styles.copied : ""}`} onClick={handleCopy}>
+                        {copied ? "Đã copy" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.shareAccessBox} style={{ marginTop: '1rem' }}>
+                    <div className={styles.shareAccessRow}>
+                      <div className={styles.shareAccessInfo}>
+                        <p style={{ margin: 0, fontWeight: 500 }}>Bất kỳ ai có đường liên kết</p>
+                      </div>
+                      <div className={styles.shareAccessDropdown}>
+                        <select value={collaborative ? "editor" : "viewer"} onChange={(e) => handleToggleCollaborativeDirect(e.target.value === "editor")}>
+                          <option value="viewer">Người xem</option>
+                          <option value="editor">Người đóng góp</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={handleUnshare} className={styles.shareUnshareBtn} style={{ marginTop: '1rem' }}>
+                    Tắt liên kết công khai
+                  </button>
+                </>
+              )}
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '1.5rem 0' }} />
+
+            {/* Email Invitation Section */}
+            <div>
+              <h4 style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 600 }}>Mời người dùng</h4>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                <input 
+                  type="email" 
+                  placeholder="Nhập email..." 
+                  value={inviteEmail} 
+                  onChange={e => setInviteEmail(e.target.value)}
+                  style={{ flex: 1, padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-subtle)' }} 
+                />
+                <select 
+                  value={inviteRole} 
+                  onChange={e => setInviteRole(e.target.value)}
+                  style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}
                 >
-                  Bật chia sẻ Album
+                  <option value="VIEWER">Chỉ xem</option>
+                  <option value="EDITOR">Đóng góp</option>
+                </select>
+                <button onClick={handleInvite} disabled={isPending || !inviteEmail} className="btn btn-primary" style={{ padding: '0 1rem' }}>
+                  {isPending ? "..." : "Mời"}
                 </button>
               </div>
-            ) : (
-              <>
-                <div className={styles.shareOptionsRow}>
-                  <button 
-                    type="button"
-                    className={styles.shareOptionBtn}
-                    onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank')}
-                  >
-                    <div className={`${styles.shareOptionIcon} ${styles.shareIconFb}`}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"></path></svg>
-                    </div>
-                    <span>Facebook</span>
-                  </button>
-                  
-                  <button 
-                    type="button"
-                    className={styles.shareOptionBtn}
-                    onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=Xem%20album%20ảnh%20tuyệt%20đẹp%20này!`, '_blank')}
-                  >
-                    <div className={`${styles.shareOptionIcon} ${styles.shareIconX}`}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.004 3.985H5.078z"></path></svg>
-                    </div>
-                    <span>X (Twitter)</span>
-                  </button>
-                  
-                  <button 
-                    type="button"
-                    className={styles.shareOptionBtn}
-                    onClick={() => window.open(`https://api.whatsapp.com/send?text=Xem%20album%20ảnh%20tuyệt%20đẹp%20này!%20${encodeURIComponent(url)}`, '_blank')}
-                  >
-                    <div className={`${styles.shareOptionIcon} ${styles.shareIconWa}`}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                    </div>
-                    <span>WhatsApp</span>
-                  </button>
 
-                  <button 
-                    type="button"
-                    className={styles.shareOptionBtn}
-                    onClick={() => window.open(`https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=&su=${encodeURIComponent("Xem album ảnh tuyệt đẹp này!")}&body=${encodeURIComponent(url)}`, '_blank')}
-                  >
-                    <div className={`${styles.shareOptionIcon} ${styles.shareIconGmail}`}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Người có quyền truy cập</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {shares.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Chưa có ai được mời.</p>
+                ) : (
+                  shares.map(share => (
+                    <div key={share.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', border: '1px solid var(--border-subtle)', borderRadius: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{share.user.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{share.user.email}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: '4px' }}>
+                          {share.role === 'EDITOR' ? 'Đóng góp' : 'Chỉ xem'}
+                        </span>
+                        <button onClick={() => handleRemoveShare(share.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <span>Gmail</span>
-                  </button>
-                </div>
-                
-                <div className={styles.shareLinkBox}>
-                  <p className={styles.shareLinkLabel}>Link chia sẻ:</p>
-                  <div className={styles.shareLinkInputGroup}>
-                    <input 
-                      ref={inputRef}
-                      type="text" 
-                      className={styles.shareLinkInput}
-                      value={url} 
-                      readOnly 
-                      onClick={(e) => e.currentTarget.select()}
-                    />
-                    <button 
-                      type="button"
-                      className={`${styles.shareLinkCopyBtn} ${copied ? styles.copied : ""}`}
-                      onClick={handleCopy} 
-                    >
-                      {copied ? "Đã copy" : "Copy"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.shareAccessBox}>
-                  <p className={styles.shareLinkLabel}>Quyền truy cập chung:</p>
-                  <div className={styles.shareAccessRow}>
-                    <div className={styles.shareAccessIcon}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                    </div>
-                    <div className={styles.shareAccessInfo}>
-                      <h4>Bất kỳ ai có đường liên kết</h4>
-                      <p>Bất kỳ ai trên internet có liên kết đều có thể {collaborative ? "xem và đóng góp" : "xem"}</p>
-                    </div>
-                    <div className={styles.shareAccessDropdown}>
-                      <select 
-                        value={collaborative ? "editor" : "viewer"} 
-                        onChange={(e) => {
-                          const isCollab = e.target.value === "editor";
-                          if (isCollab !== collaborative) {
-                            handleToggleCollaborativeDirect(isCollab);
-                          }
-                        }}
-                      >
-                        <option value="viewer">Người xem</option>
-                        <option value="editor">Người đóng góp</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: "1rem" }}>
-                  <button
-                    type="button"
-                    onClick={handleUnshare}
-                    className={styles.shareUnshareBtn}
-                  >
-                    Tắt chia sẻ Album
-                  </button>
-                </div>
-              </>
-            )}
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

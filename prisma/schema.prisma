@@ -20,6 +20,7 @@ model User {
   people              Person[]
   photos              Photo[]
   stories             Story[]
+  albumShares         AlbumShare[]
 }
 
 model Album {
@@ -38,6 +39,7 @@ model Album {
   children        Album[]   @relation("AlbumToAlbum")
   user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos          Photo[]
+  albumShares     AlbumShare[]
 }
 
 model Photo {
@@ -158,4 +160,17 @@ model Story {
   isCollaborative Boolean  @default(false)
   photos          Photo[]
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AlbumShare {
+  id        String   @id @default(cuid())
+  albumId   String
+  userId    String
+  role      String   @default("VIEWER")
+  createdAt DateTime @default(now())
+
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, userId])
 }

@@ -170,9 +170,82 @@ export async function bulkDeletePhotos(ids: string[]) {
   });
 
   await clearUserCache(session.userId);
-  revalidatePath("/", "layout");
+  revalidatePath("/shared-albums");
 }
 
+export async function inviteUserToAlbum(albumId: string, email: string, role: string) {
+  const session = await checkAuthServerAction();
+  const album = await prisma.album.findUnique({ where: { id: albumId } });
+  if (!album || album.userId !== session.userId) throw new Error("Unauthorized");
+
+  const invitedUser = await prisma.user.findUnique({ where: { email } });
+  if (!invitedUser) throw new Error("Người dùng không tồn tại trong hệ thống.");
+  if (invitedUser.id === session.userId) throw new Error("Bạn không thể tự mời chính mình.");
+
+  const share = await prisma.albumShare.upsert({
+    where: { albumId_userId: { albumId, userId: invitedUser.id } },
+    update: { role },
+    create: { albumId, userId: invitedUser.id, role }
+  });
+
+  revalidatePath(`/albums/${albumId}`);
+  return share;
+}
+
+export async function getAlbumShares(albumId: string) {
+  const session = await checkAuthServerAction();
+  const album = await prisma.album.findUnique({ where: { id: albumId } });
+  if (!album) throw new Error("Album not found");
+
+  const isOwner = album.userId === session.userId;
+  if (!isOwner) {
+    const myShare = await prisma.albumShare.findUnique({
+      where: { albumId_userId: { albumId, userId: session.userId } }
+    });
+    if (!myShare) throw new Error("Unauthorized");
+  }
+
+  return prisma.albumShare.findMany({
+    where: { albumId },
+    include: { user: { select: { id: true, name: true, email: true, image: true } } },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function updateAlbumShareRole(shareId: string, role: string) {
+  const session = await checkAuthServerAction();
+  const share = await prisma.albumShare.findUnique({ where: { id: shareId }, include: { album: true } });
+  if (!share || share.album.userId !== session.userId) throw new Error("Unauthorized");
+
+  await prisma.albumShare.update({ where: { id: shareId }, data: { role } });
+  revalidatePath(`/albums/${share.albumId}`);
+}
+
+export async function removeAlbumShare(shareId: string) {
+  const session = await checkAuthServerAction();
+  const share = await prisma.albumShare.findUnique({ where: { id: shareId }, include: { album: true } });
+  if (!share || share.album.userId !== session.userId) throw new Error("Unauthorized");
+
+  await prisma.albumShare.delete({ where: { id: shareId } });
+  revalidatePath(`/albums/${share.albumId}`);
+}
+
+export async function createAlbum(name: string, description?: string, parentId?: string | null) {
+  const session = await checkAuthServerAction();
+
+  const album = await prisma.album.create({
+    data: {
+      name,
+      description,
+      parentId,
+      userId: session.userId
+    }
+  });
+
+  await clearUserCache(session.userId);
+  revalidatePath("/albums", "layout");
+  return album;
+}
 export async function bulkAddToAlbum(photoIds: string[], albumId: string) {
   const session = await checkAuthServerAction();
   if (!photoIds || photoIds.length === 0) return;
