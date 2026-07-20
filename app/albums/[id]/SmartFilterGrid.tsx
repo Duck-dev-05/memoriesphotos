@@ -7,6 +7,7 @@ import { getOptimizedMediaUrl, getSafeUrl } from "@/lib/media";
 import styles from "./page.module.css";
 import { useSelection } from "@/app/contexts/SelectionContext";
 import SelectablePhoto from "@/app/components/SelectablePhoto";
+import { useRouter } from "next/navigation";
 
 interface Album { id: string; name: string; }
 
@@ -23,7 +24,37 @@ export default function SmartFilterGrid({
 }) {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState("");
   const { isSelectionMode, toggleSelectionMode, isSelected, togglePhoto, selectedPhotos } = useSelection();
+  const router = useRouter();
+
+  const handleScanAlbum = async () => {
+    // Filter untagged photos
+    const untaggedPhotos = photos.filter(p => !p.tags || p.tags.length === 0);
+    if (untaggedPhotos.length === 0) {
+      alert("Tất cả các ảnh trong album đã có thẻ!");
+      return;
+    }
+    
+    setIsScanning(true);
+    let successCount = 0;
+    
+    for (let i = 0; i < untaggedPhotos.length; i++) {
+      const photo = untaggedPhotos[i];
+      setScanProgress(`Đang quét ${i + 1}/${untaggedPhotos.length}...`);
+      try {
+        const res = await fetch(`/api/v1/photos/${photo.id}/auto-tag`, { method: "POST" });
+        if (res.ok) successCount++;
+      } catch (err) {
+        console.error("Auto-tag failed for photo", photo.id, err);
+      }
+    }
+    
+    setIsScanning(false);
+    setScanProgress("");
+    alert(`Đã tự động gắn thẻ thành công ${successCount}/${untaggedPhotos.length} ảnh.`);
+    router.refresh();
+  };
 
 
 
@@ -129,7 +160,27 @@ export default function SmartFilterGrid({
                 </>
               )}
             </button>
-            {/* AI Scan button removed */}
+            <button
+              onClick={handleScanAlbum}
+              disabled={isScanning}
+              className={styles.filterBtn}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                background: isScanning ? "var(--bg-secondary)" : "var(--accent-1)",
+                color: isScanning ? "var(--text-secondary)" : "white",
+                border: "none",
+                cursor: isScanning ? "not-allowed" : "pointer"
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+                <path d="M12 12 2.1 7.1" />
+                <path d="M12 12l9.9 4.9" />
+              </svg>
+              {isScanning ? scanProgress : "Quét AI"}
+            </button>
           </div>
         </div>
       )}

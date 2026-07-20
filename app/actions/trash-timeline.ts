@@ -482,6 +482,42 @@ export async function getSharedAlbums() {
   return albums;
 }
 
+export async function joinPublicAlbum(token: string) {
+  const session = await checkAuthServerAction();
+  
+  const album = await prisma.album.findUnique({
+    where: { shareToken: token },
+    include: { albumShares: true }
+  });
+
+  if (!album || !album.isPublic || album.deletedAt) {
+    throw new Error("Album not found or not public");
+  }
+
+  if (album.userId === session.userId) {
+    return { success: true, albumId: album.id }; // Already owner
+  }
+
+  const existingShare = album.albumShares.find(s => s.userId === session.userId);
+  if (existingShare) {
+    return { success: true, albumId: album.id }; // Already joined
+  }
+
+  await prisma.albumShare.create({
+    data: {
+      albumId: album.id,
+      userId: session.userId,
+      role: "VIEWER"
+    }
+  });
+
+  await clearUserCache(session.userId);
+  revalidatePath("/albums", "layout");
+  revalidatePath("/shared-albums", "layout");
+
+  return { success: true, albumId: album.id };
+}
+
 export async function generatePhotoShareLink(photoId: string) {
   const session = await checkAuthServerAction();
 
@@ -525,6 +561,7 @@ export async function getPublicAlbum(token: string) {
     where: { shareToken: token },
     include: {
       user: { select: { name: true } },
+      albumShares: true,
       photos: {
         where: { deletedAt: null },
         orderBy: { createdAt: "desc" },

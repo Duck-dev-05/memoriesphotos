@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { getOptimizedMediaUrl } from "@/lib/media";
 import styles from "../../albums/[id]/page.module.css";
 import GuestUploadButton from "./GuestUploadButton";
+import JoinAlbumButton from "./JoinAlbumButton";
 
 export default async function SharedAlbumPage({
   params,
@@ -42,8 +43,11 @@ export default async function SharedAlbumPage({
     <div className={styles.page}>
       <header className={styles.albumBanner}>
         <div className={styles.bannerLeft}>
-          <div className={styles.bannerBreadcrumb}>
+          <div className={styles.bannerBreadcrumb} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: "var(--accent-1)", fontWeight: "bold" }}>Album Được Chia Sẻ</span>
+            {session && album.userId !== session.userId && !album.albumShares?.some((s: any) => s.userId === session.userId) && (
+              <JoinAlbumButton token={token} albumId={album.id} />
+            )}
           </div>
 
           <h1 className={styles.bannerTitle}>{album.name}</h1>
