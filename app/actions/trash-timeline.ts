@@ -230,22 +230,7 @@ export async function removeAlbumShare(shareId: string) {
   revalidatePath(`/albums/${share.albumId}`);
 }
 
-export async function createAlbum(name: string, description?: string, parentId?: string | null) {
-  const session = await checkAuthServerAction();
 
-  const album = await prisma.album.create({
-    data: {
-      name,
-      description,
-      parentId,
-      userId: session.userId
-    }
-  });
-
-  await clearUserCache(session.userId);
-  revalidatePath("/albums", "layout");
-  return album;
-}
 export async function bulkAddToAlbum(photoIds: string[], albumId: string) {
   const session = await checkAuthServerAction();
   if (!photoIds || photoIds.length === 0) return;
