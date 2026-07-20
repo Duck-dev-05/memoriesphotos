@@ -31,9 +31,23 @@ export default function AutoTagFab({ albumId }: { albumId: string }) {
         setProgress(`Đang quét ${i + 1}/${untaggedPhotos.length}...`);
         try {
           const res = await fetch(`/api/v1/photos/${photo.id}/auto-tag`, { method: "POST" });
-          if (res.ok) successCount++;
-        } catch (err) {
-          console.error("Auto-tag failed for photo", photo.id, err);
+          if (res.ok) {
+            successCount++;
+          } else {
+            const errData = await res.json().catch(() => null);
+            console.error("Auto-tag failed for photo", photo.id, errData || res.statusText);
+            if (i === 0) throw new Error(errData?.error || errData?.message || res.statusText);
+          }
+        } catch (err: any) {
+          console.error("Auto-tag exception for photo", photo.id, err);
+          if (i === 0) {
+            alert(`Lỗi quét ảnh đầu tiên: ${err.message}`);
+          }
+        }
+        
+        // Add a 4.5s delay to avoid exceeding Gemini API rate limits (15 requests/min on free tier)
+        if (i < untaggedPhotos.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 4500));
         }
       }
       
