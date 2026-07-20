@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GoogleGenAI } from "@google/genai";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import exifr from "exifr";
@@ -166,6 +167,37 @@ export async function POST(request: Request) {
     let parsedTags: string[] = [];
     if (manualTags) {
       parsedTags = manualTags.split(",").map(t => t.trim()).filter(t => t);
+    }
+
+    // Auto-tagging with Gemini LLM
+    if (!isVideo && process.env.GEMINI_API_KEY) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: 'Analyze this image and provide exactly 5 relevant keywords/tags describing its contents. Output ONLY a comma-separated list of lowercase tags without any extra text, punctuation, or formatting.' },
+                { inlineData: { data: buffer.toString("base64"), mimeType: file.type || "image/jpeg" } }
+              ]
+            }
+          ]
+        });
+        
+        if (response.text) {
+          const aiTags = response.text.split(",").map(t => t.trim().toLowerCase()).filter(t => t);
+          // Merge AI tags with manual tags, avoiding duplicates
+          aiTags.forEach(tag => {
+            if (!parsedTags.includes(tag)) {
+              parsedTags.push(tag);
+            }
+          });
+        }
+      } catch (aiError) {
+        console.error("Gemini Auto-tagging failed:", aiError);
+      }
     }
 
     const tagConnectOrCreate = parsedTags.map((tag) => ({
