@@ -221,9 +221,8 @@ export async function getAlbums() {
 
 export async function getAlbum(id: string) {
   const session = await getSession();
-  if (!session) return null;
 
-  const cacheKey = `user:${session.userId}:album:${id}`;
+  const cacheKey = session ? `user:${session.userId}:album:${id}` : `public:album:${id}`;
   const cached = await getCache<any>(cacheKey);
   if (cached) return cached;
 
@@ -252,7 +251,30 @@ export async function getAlbum(id: string) {
       },
     },
   });
-  if (!album || album.userId !== session.userId || album.deletedAt) return null;
+
+  if (!album || album.deletedAt) return null;
+
+  let hasAccess = false;
+
+  // 1. Owner
+  if (session && album.userId === session.userId) {
+    hasAccess = true;
+  }
+  
+  // 2. Publicly shared
+  if (!hasAccess && album.isPublic) {
+    hasAccess = true;
+  }
+
+  // 3. Explicitly invited via AlbumShare
+  if (!hasAccess && session) {
+    const share = await prisma.albumShare.findUnique({
+      where: { albumId_userId: { albumId: id, userId: session.userId } }
+    });
+    if (share) hasAccess = true;
+  }
+
+  if (!hasAccess) return null;
 
   await setCache(cacheKey, album);
   return album;

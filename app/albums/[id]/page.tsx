@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAlbum, getAlbums, deleteAlbum } from "@/app/actions";
 import { notFound, redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { getOptimizedMediaUrl, getSafeUrl } from "@/lib/media";
 import DeleteAlbumButton from "../DeleteAlbumButton";
 import styles from "./page.module.css";
@@ -18,14 +18,16 @@ export default async function AlbumDetail({
 }) {
   const { id } = await params;
   
-  const [album, albums, isAuth] = await Promise.all([
+  const [album, albums, session] = await Promise.all([
     getAlbum(id),
     getAlbums(),
-    isAuthenticated(),
+    getSession(),
   ]);
 
 
   if (!album) notFound();
+
+  const isOwner = session?.userId === album.userId;
 
   async function handleDelete() {
     "use server";
@@ -261,9 +263,11 @@ export default async function AlbumDetail({
                       <div className={styles.albumBadge}>
                         {child._count?.photos ?? (child.photos ? child.photos.length : 0)} Ảnh
                       </div>
-                      <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
-                        <DeleteAlbumButton id={child.id} />
-                      </div>
+                      {isOwner && (
+                        <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+                          <DeleteAlbumButton id={child.id} />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className={styles.albumCardInfo}>
@@ -291,12 +295,12 @@ export default async function AlbumDetail({
 
         {/* ── Masonry Gallery with Smart Filtering ───────────────────── */}
         {allPhotos.length > 0 && (
-          <SmartFilterGrid photos={allPhotos} albumId={album.id} isAuth={isAuth} />
+          <SmartFilterGrid photos={allPhotos} albumId={album.id} isAuth={isOwner} />
         )}
       </>
 
       {/* ── Floating Action Buttons (auth only) ── */}
-      {isAuth && (
+      {isOwner && (
         <div className={styles.fab}>
           <ShareButton albumId={album.id} existingToken={album.shareToken} isCollaborative={album.isCollaborative} />
           <EditAlbumModal album={album} />

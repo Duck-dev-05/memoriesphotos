@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getPhoto, getPublicPhoto, deletePhoto, toggleFavorite, getAlbums, getAdjacentPhotos } from "@/app/actions";
 import { notFound, redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import EditPhotoForm from "./EditPhotoForm";
 import PhotoNavigator from "./components/PhotoNavigator";
 import EditorButton from "./EditorButton";
@@ -28,8 +28,10 @@ export default async function PhotoDetail({
     photo = await getPhoto(id);
   }
 
-  const isAuth = await isAuthenticated();
+  const session = await getSession();
+  const isAuth = !!session;
   const albums = isAuth ? await getAlbums() : [];
+  const isOwner = session?.userId === photo?.userId;
   
   // getAdjacentPhotos requires auth, so only fetch if authenticated for now,
   // or modify getAdjacentPhotos to support sharedTokens. Let's just pass null for guest to hide navigator arrows.
@@ -77,7 +79,7 @@ export default async function PhotoDetail({
           </Link>
           
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {isAuth && (
+            {isOwner && (
               <>
                 <PhotoShareButton photoId={photo.id} existingToken={photo.shareToken} />
                 <EditorButton photoId={photo.id} imageUrl={photo.url || ""} />
@@ -140,7 +142,7 @@ export default async function PhotoDetail({
             
             {/* Details or Edit Form */}
             <div>
-              {isAuth ? (
+              {isOwner ? (
                 <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "12px" }}>
                   <EditPhotoForm 
                     photo={{ 
