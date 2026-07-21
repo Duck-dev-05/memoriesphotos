@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import archiver from "archiver";
 import fs from "fs";
 import path from "path";
+
+// Require archiver to avoid ES Module default export issues
+const archiver = require("archiver");
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -16,11 +18,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         userId: session.userId,
       },
       include: {
-        photos: {
-          include: {
-            photo: true
-          }
-        }
+        photos: true
       }
     });
 
@@ -28,7 +26,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Album not found" }, { status: 404 });
     }
 
-    const photos = album.photos.map(ap => ap.photo);
+    const photos = album.photos;
 
     if (photos.length === 0) {
       return NextResponse.json({ error: "Album is empty" }, { status: 400 });
