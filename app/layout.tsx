@@ -79,6 +79,8 @@ import ProgressBar from "./components/ProgressBar";
 import AutoRefreshProvider from "./components/AutoRefreshProvider";
 import GlobalShortcuts from "./components/GlobalShortcuts";
 
+import OfflineIndicator from "./components/OfflineIndicator";
+
 export default async function RootLayout({
   children,
   modal,
@@ -91,6 +93,7 @@ export default async function RootLayout({
   return (
     <html lang="vi" className={`${playfair.variable} ${lora.variable} ${handwriting.variable}`}>
       <body>
+        <OfflineIndicator />
         <Script id="pwa-sw" strategy="afterInteractive" dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

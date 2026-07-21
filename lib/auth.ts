@@ -84,11 +84,20 @@ export async function checkAuthServerAction() {
 
 export async function getApiSession(request: Request): Promise<SessionPayload | null> {
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  let token = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    // Try to get token from query param (useful for downloads from desktop app)
+    const url = new URL(request.url);
+    token = url.searchParams.get('token');
+  }
+
+  if (!token) {
     return await getSession(); // fallback to cookie for browser clients
   }
   
-  const token = authHeader.split(' ')[1];
   try {
     const { payload } = await jwtVerify(token, SECRET);
     return payload as unknown as SessionPayload;
