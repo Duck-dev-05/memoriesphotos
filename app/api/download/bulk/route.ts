@@ -3,7 +3,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PassThrough } from "stream";
 
-import archiver from "archiver";
+// @ts-ignore
+import { ZipArchive } from "archiver";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Build a ZIP stream
-  const archive = archiver("zip", { zlib: { level: 5 } });
+  const archive = new ZipArchive({ zlib: { level: 5 } });
   const passThrough = new PassThrough();
   archive.pipe(passThrough);
 

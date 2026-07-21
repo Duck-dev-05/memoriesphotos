@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
 
-import archiver from "archiver";
+// @ts-ignore
+import { ZipArchive } from "archiver";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -31,7 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Album is empty" }, { status: 400 });
     }
 
-    const archive = archiver('zip', {
+    const archive = new ZipArchive({
       zlib: { level: 5 }
     });
 
