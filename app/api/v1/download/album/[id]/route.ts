@@ -39,7 +39,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     
-    archive.on('data', (chunk) => {
+    archive.on('data', (chunk: Buffer) => {
       writer.write(chunk);
     });
 
