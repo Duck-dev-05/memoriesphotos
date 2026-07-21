@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getApiSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PassThrough } from "stream";
 
@@ -7,7 +7,7 @@ import { PassThrough } from "stream";
 import { ZipArchive } from "archiver";
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
