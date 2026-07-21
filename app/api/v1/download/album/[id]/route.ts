@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import * as archiver from "archiver";
 import fs from "fs";
 import path from "path";
-
-// Require archiver to avoid ES Module default export issues
-const archiver = require("archiver");
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -32,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Album is empty" }, { status: 400 });
     }
 
-    const archive = archiver('zip', {
+    const archive = archiver.create('zip', {
       zlib: { level: 5 }
     });
 
