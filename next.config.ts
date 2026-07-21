@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       }
     ]
   },
+  serverExternalPackages: ['archiver'],
   experimental: {
     serverActions: {
       bodySizeLimit: '1000mb',
