@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import * as archiver from "archiver";
 import fs from "fs";
 import path from "path";
+
+const archiverModule = require("archiver");
+const archiver = typeof archiverModule === 'function' ? archiverModule : archiverModule.default;
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -30,7 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Album is empty" }, { status: 400 });
     }
 
-    const archive = archiver.create('zip', {
+    const archive = archiver('zip', {
       zlib: { level: 5 }
     });
 

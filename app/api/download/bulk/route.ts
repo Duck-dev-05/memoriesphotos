@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import * as archiver from "archiver";
 import { PassThrough } from "stream";
+
+const archiverModule = require("archiver");
+const archiver = typeof archiverModule === 'function' ? archiverModule : archiverModule.default;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Build a ZIP stream
-  const archive = archiver.create("zip", { zlib: { level: 5 } });
+  const archive = archiver("zip", { zlib: { level: 5 } });
   const passThrough = new PassThrough();
   archive.pipe(passThrough);
 
