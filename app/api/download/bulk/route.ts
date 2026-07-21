@@ -3,8 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PassThrough } from "stream";
 
-const archiverModule = require("archiver");
-const archiver = typeof archiverModule === 'function' ? archiverModule : archiverModule.default;
+import archiver from "archiver";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();

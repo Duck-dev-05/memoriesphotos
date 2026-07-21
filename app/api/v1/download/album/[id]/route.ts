@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
 
-const archiverModule = require("archiver");
-const archiver = typeof archiverModule === 'function' ? archiverModule : archiverModule.default;
+import archiver from "archiver";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
