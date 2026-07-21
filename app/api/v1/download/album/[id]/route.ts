@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       writer.close();
     });
 
-    archive.on('error', (err) => {
+    archive.on('error', (err: any) => {
       console.error("Archive error:", err);
       writer.abort(err);
     });
