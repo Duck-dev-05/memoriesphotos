@@ -589,90 +589,57 @@
 .fabBtn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.72rem 1.3rem;
-  border-radius: 40px;
+  gap: 0.6rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 16px;
   font-family: var(--font-heading);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  border: none;
-  transition: all 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
   pointer-events: all;
-  letter-spacing: 0.01em;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: var(--text-primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
+.fabBtn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Primary actions like Add Photo */
 .fabAdd {
-  background: linear-gradient(135deg, var(--accent-1), #df9396);
-  color: white;
-  box-shadow: 0 6px 22px rgba(201, 122, 126, 0.42);
+  background: var(--text-primary);
+  color: var(--bg-primary) !important;
+  border-color: transparent;
 }
 
 .fabAdd:hover {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 12px 30px rgba(201, 122, 126, 0.55);
+  background: #1a1515;
+  color: white !important;
 }
 
-.fabAi {
-  background: var(--text-primary);
-  color: var(--bg-primary);
-  box-shadow: 0 6px 22px rgba(59, 47, 47, 0.3);
-}
-
-.fabAi:hover {
-  transform: translateY(-3px) scale(1.04);
-  background: #2a2222;
-  box-shadow: 0 12px 30px rgba(59, 47, 47, 0.4);
-}
-
+/* Destructive actions */
 .fabDelete {
-  background: rgba(255, 255, 255, 0.9);
-  color: rgba(175, 75, 80, 0.9);
-  border: 1.5px solid rgba(201, 122, 126, 0.22);
-  box-shadow: 0 4px 16px rgba(59, 47, 47, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  color: #dc2626;
 }
 
 .fabDelete:hover {
-  background: white;
-  border-color: rgba(201, 122, 126, 0.45);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(59, 47, 47, 0.14);
+  background: rgba(254, 226, 226, 0.85);
+  border-color: rgba(248, 113, 113, 0.4);
 }
 
-.fabEdit {
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--text-primary);
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.fabEdit:hover {
-  background: white;
-  border-color: rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
-}
-
-.fabShare {
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--accent-1);
-  border: 1.5px solid rgba(201, 122, 126, 0.3);
-  box-shadow: 0 4px 16px rgba(201, 122, 126, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.fabShare:hover {
-  background: white;
-  border-color: var(--accent-1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(201, 122, 126, 0.2);
+/* Inherited shared actions: Share, Edit, Download, AI */
+.fabShare, .fabEdit, .fabAi {
+  /* Relies on base glass style */
 }
 
 /* =============================================
