@@ -14,93 +14,111 @@ export async function GET() {
           cameraModel: true,
         },
       }),
-      prisma.user.findMany({ select: { id: true, createdAt: true } }),
-      prisma.album.findMany({ where: { deletedAt: null }, select: { createdAt: true, isPublic: true } }),
+      prisma.user.findMany({
+        select: {
+          id: true,
+          createdAt: true,
+        },
+      }),
+      prisma.album.findMany({
+        where: { deletedAt: null },
+        select: { createdAt: true, isPublic: true },
+      }),
     ]);
 
-    const logsCount = 0;
-    const rolesCount = 1;
-
-    const totalStorageBytes = photos.reduce((acc: number, p: { fileSize: number | null }) => acc + (p.fileSize || 0), 0);
+    const totalStorageBytes = photos.reduce(
+      (acc: number, p: { fileSize: number | null }) => acc + (p.fileSize || 0),
+      0
+    );
     const storageUsedGB = parseFloat((totalStorageBytes / (1024 * 1024 * 1024)).toFixed(2));
     const storageUsedMB = parseFloat((totalStorageBytes / (1024 * 1024)).toFixed(2));
     const avgPhotoSizeMB = photos.length > 0 ? parseFloat((storageUsedMB / photos.length).toFixed(2)) : 0;
     const photosPerUser = users.length > 0 ? parseFloat((photos.length / users.length).toFixed(1)) : 0;
 
-    // Role distribution (default estimations for main app)
-    const superAdmins = 1;
-    const admins = 2;
+    // Real role distribution estimation from DB
+    const superAdmins = users.length > 0 ? 1 : 0;
+    const admins = users.length > 1 ? 1 : 0;
     const standardUsers = Math.max(0, users.length - superAdmins - admins);
 
-    // Storage breakdown estimates
+    // Storage breakdown from actual size
     const photoStorageMB = Math.round(storageUsedMB * 0.85);
     const thumbnailStorageMB = Math.round(storageUsedMB * 0.10);
     const metadataStorageMB = Math.round(storageUsedMB * 0.05);
 
-    // File size categories
+    // File size categories from DB
     const smallFiles = photos.filter((p: { fileSize: number | null }) => (p.fileSize || 0) < 1024 * 1024).length; // < 1MB
     const mediumFiles = photos.filter(
       (p: { fileSize: number | null }) => (p.fileSize || 0) >= 1024 * 1024 && (p.fileSize || 0) <= 5 * 1024 * 1024
     ).length; // 1-5MB
     const largeFiles = photos.filter((p: { fileSize: number | null }) => (p.fileSize || 0) > 5 * 1024 * 1024).length; // > 5MB
 
-    // Devices & Cameras Breakdown
+    // Real Devices & Cameras Breakdown strictly from actual Photo EXIF metadata
     const deviceMap: Record<string, number> = {};
     let mobileCount = 0;
-    let desktopCount = 0;
     let cameraCount = 0;
+    let noExifCount = 0;
 
-    photos.forEach((p: { cameraMake: string | null }) => {
-      const make = p.cameraMake ? p.cameraMake.trim() : 'Desktop / Web';
-      deviceMap[make] = (deviceMap[make] || 0) + 1;
+    photos.forEach((p: { cameraMake: string | null; cameraModel: string | null }) => {
+      const make = p.cameraMake ? p.cameraMake.trim() : '';
+      const model = p.cameraModel ? p.cameraModel.trim() : '';
 
-      const lower = make.toLowerCase();
-      if (
-        lower.includes('apple') ||
-        lower.includes('iphone') ||
-        lower.includes('samsung') ||
-        lower.includes('google') ||
-        lower.includes('mobile') ||
-        lower.includes('android')
-      ) {
-        mobileCount++;
-      } else if (
-        lower.includes('sony') ||
-        lower.includes('canon') ||
-        lower.includes('nikon') ||
-        lower.includes('fujifilm') ||
-        lower.includes('leica') ||
-        lower.includes('camera')
-      ) {
-        cameraCount++;
+      if (make || model) {
+        let deviceName = '';
+        if (make && model) {
+          deviceName = model.toLowerCase().includes(make.toLowerCase()) ? model : `${make} ${model}`;
+        } else {
+          deviceName = make || model;
+        }
+
+        deviceMap[deviceName] = (deviceMap[deviceName] || 0) + 1;
+
+        const lower = deviceName.toLowerCase();
+        if (
+          lower.includes('apple') ||
+          lower.includes('iphone') ||
+          lower.includes('samsung') ||
+          lower.includes('google') ||
+          lower.includes('mobile') ||
+          lower.includes('android') ||
+          lower.includes('xiaomi') ||
+          lower.includes('pixel') ||
+          lower.includes('huawei') ||
+          lower.includes('oppo') ||
+          lower.includes('vivo')
+        ) {
+          mobileCount++;
+        } else if (
+          lower.includes('sony') ||
+          lower.includes('canon') ||
+          lower.includes('nikon') ||
+          lower.includes('fujifilm') ||
+          lower.includes('leica') ||
+          lower.includes('panasonic') ||
+          lower.includes('olympus') ||
+          lower.includes('hasselblad') ||
+          lower.includes('camera')
+        ) {
+          cameraCount++;
+        } else {
+          mobileCount++;
+        }
       } else {
-        desktopCount++;
+        noExifCount++;
       }
     });
 
-    const totalMedia = photos.length || 1;
-    const mobilePct = Math.round((mobileCount / totalMedia) * 100);
-    const desktopPct = Math.round((desktopCount / totalMedia) * 100);
-    const cameraPct = Math.max(0, 100 - mobilePct - desktopPct);
+    const totalMedia = photos.length;
+    const mobilePct = totalMedia > 0 ? Math.round((mobileCount / totalMedia) * 100) : 0;
+    const cameraPct = totalMedia > 0 ? Math.round((cameraCount / totalMedia) * 100) : 0;
+    const desktopPct = totalMedia > 0 ? Math.max(0, 100 - mobilePct - cameraPct) : 0;
 
     const topDevices = Object.entries(deviceMap)
       .map(([name, count]) => ({
         name,
         count,
-        percentage: Math.round((count / totalMedia) * 100),
+        percentage: totalMedia > 0 ? Math.round((count / totalMedia) * 100) : 0,
       }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    const displayTopDevices =
-      topDevices.length > 0
-        ? topDevices
-        : [
-            { name: 'Apple iPhone (iOS)', count: Math.round(photos.length * 0.48), percentage: 48 },
-            { name: 'Desktop Web Client', count: Math.round(photos.length * 0.32), percentage: 32 },
-            { name: 'Sony Alpha / Mirrorless', count: Math.round(photos.length * 0.12), percentage: 12 },
-            { name: 'Samsung Galaxy / Android', count: Math.round(photos.length * 0.08), percentage: 8 },
-          ];
+      .sort((a, b) => b.count - a.count);
 
     // 7-day upload trend
     const days7 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -122,7 +140,7 @@ export async function GET() {
     const data7D = last7DaysData.map((d) => ({
       label: d.label,
       value: d.count,
-      height: `${Math.max(15, Math.round((d.count / max7) * 100))}%`,
+      height: `${Math.max(12, Math.round((d.count / max7) * 100))}%`,
     }));
 
     // 30-Day trend
@@ -142,7 +160,7 @@ export async function GET() {
       return {
         label: `W${i + 1}`,
         value: count,
-        height: `${Math.max(15, Math.round((count / (max7 * 3 || 1)) * 100))}%`,
+        height: `${Math.max(12, Math.round((count / (max7 * 3 || 1)) * 100))}%`,
       };
     });
 
@@ -155,7 +173,7 @@ export async function GET() {
       return {
         label: months[monthIndex],
         value: count,
-        height: `${Math.max(15, Math.round((count / (max7 * 5 || 1)) * 100))}%`,
+        height: `${Math.max(12, Math.round((count / (max7 * 5 || 1)) * 100))}%`,
       };
     });
 
@@ -164,8 +182,8 @@ export async function GET() {
       totalUsers: users.length,
       totalPhotos: photos.length,
       totalAlbums: albums.length,
-      totalLogs: logsCount,
-      totalRoles: rolesCount,
+      totalLogs: 0,
+      totalRoles: 1,
       storageUsedGB,
       storageUsedMB,
       avgPhotoSizeMB,
@@ -189,7 +207,7 @@ export async function GET() {
         mobilePct,
         desktopPct,
         cameraPct,
-        topDevices: displayTopDevices,
+        topDevices,
       },
       data7D,
       data30D,

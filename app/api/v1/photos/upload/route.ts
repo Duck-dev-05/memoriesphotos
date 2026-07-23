@@ -256,6 +256,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ photo }, { status: 201 });
   } catch (error: any) {
     console.error("Upload Photo API error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    const message = error.message || "Internal Server Error";
+    let status = 500;
+    if (message.includes("Unauthorized")) {
+      status = 401;
+    } else if (message.includes("limit") || message.includes("required") || message.includes("exceed")) {
+      status = 400;
+    }
+    return NextResponse.json({ error: message }, { status });
   }
 }
