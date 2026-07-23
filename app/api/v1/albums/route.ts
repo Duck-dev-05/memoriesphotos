@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   try {
     const session = await checkApiAuth(request);
     const body = await request.json();
-    const { name, description, isPublic, isCollaborative, coverImage, parentId } = body;
+    const { name, description, isPublic, isCollaborative, coverImage, parentId, isLocked, lockPasscode } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Album name is required" }, { status: 400 });
@@ -39,6 +39,8 @@ export async function POST(request: Request) {
         name,
         description,
         isPublic: isPublic || false,
+        isLocked: isLocked || false,
+        lockPasscode: lockPasscode || null,
         isCollaborative: isCollaborative || false,
         coverImage: coverImage || null,
         parentId: parentId || null,

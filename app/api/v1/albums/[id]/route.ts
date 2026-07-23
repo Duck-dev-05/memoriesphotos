@@ -28,11 +28,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const session = await checkApiAuth(request);
     const body = await request.json();
+    const { name, description, isPublic, coverImage, isLocked, lockPasscode } = body;
     const { id } = await params;
+
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (description !== undefined) data.description = description;
+    if (isPublic !== undefined) data.isPublic = isPublic;
+    if (coverImage !== undefined) data.coverImage = coverImage;
+    if (isLocked !== undefined) data.isLocked = isLocked;
+    if (lockPasscode !== undefined) data.lockPasscode = lockPasscode;
 
     const album = await prisma.album.update({
       where: { id: id, userId: session.userId },
-      data: { name: body.name }
+      data
     });
 
     await clearUserCache(session.userId);

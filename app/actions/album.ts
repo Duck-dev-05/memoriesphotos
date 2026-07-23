@@ -102,9 +102,18 @@ export async function updateAlbum(id: string, formData: FormData) {
     }
   }
 
+  const isLockedStr = formData.get("isLocked") as string;
+  const isLocked = isLockedStr === "true";
+  const lockPasscode = formData.get("lockPasscode") as string | null;
+
+  const dataToUpdate: any = { name, description, coverImage: coverImageUrl, isLocked };
+  if (lockPasscode !== null) {
+    dataToUpdate.lockPasscode = lockPasscode;
+  }
+
   await prisma.album.update({
     where: { id },
-    data: { name, description, coverImage: coverImageUrl },
+    data: dataToUpdate,
   });
 
   await clearUserCache(session.userId);
@@ -276,7 +285,59 @@ export async function getAlbum(id: string) {
 
   if (!hasAccess) return null;
 
+  // 4. Check lock
+  if (album.isLocked) {
+    const cookieStore = await cookies();
+    const unlockedStr = cookieStore.get("unlocked_albums")?.value || "[]";
+    let unlockedList = [];
+    try { unlockedList = JSON.parse(unlockedStr); } catch(e) {}
+    
+    if (!unlockedList.includes(album.id)) {
+      // Return a stripped-down version of the album (no photos, no children) indicating it is locked
+      return {
+        id: album.id,
+        name: album.name,
+        isLocked: true,
+        needsUnlock: true,
+        userId: album.userId,
+        isPublic: album.isPublic,
+        coverImage: album.coverImage
+      };
+    }
+  }
+
   await setCache(cacheKey, album);
   return album;
+}
+
+export async function unlockAlbumAction(id: string, passcode: string) {
+  const album = await prisma.album.findUnique({
+    where: { id },
+    select: { isLocked: true, lockPasscode: true }
+  });
+
+  if (!album) return { success: false, error: "Album not found" };
+  if (!album.isLocked) return { success: true };
+  if (album.lockPasscode && album.lockPasscode !== passcode) {
+    return { success: false, error: "Incorrect passcode" };
+  }
+
+  const cookieStore = await cookies();
+  const unlockedStr = cookieStore.get("unlocked_albums")?.value || "[]";
+  let unlockedList = [];
+  try { unlockedList = JSON.parse(unlockedStr); } catch(e) {}
+  
+  if (!unlockedList.includes(id)) {
+    unlockedList.push(id);
+    cookieStore.set("unlocked_albums", JSON.stringify(unlockedList), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 // 1 day
+    });
+  }
+
+  return { success: true };
 }
 

@@ -141,7 +141,15 @@ async function AlbumsData({ searchParamsPromise }: { searchParamsPromise: Promis
                 </div>
 
                 <div className={styles.albumInfo}>
-                  <h3 className={styles.albumTitle}>{album.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <h3 className={styles.albumTitle}>{album.name}</h3>
+                    {album.isLocked && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }}>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    )}
+                  </div>
                   <p className={styles.albumDesc}>
                     {album.description || "Chưa có mô tả cho album này."}
                   </p>

@@ -106,8 +106,8 @@ async function HomepageMarquee({ promise }: { promise: Promise<any> }) {
           const src = photo.url || photo.imageData;
           if (!src) return null;
           const isVideo = src.match(/\.(mp4|webm|ogg|mov)$/i);
-          const rot = Math.floor(Math.random() * 10) - 5; 
-          
+          const rot = Math.floor(Math.random() * 10) - 5;
+
           return (
             <div key={`${photo.id}-${i}`} className={styles.marqueeItem} style={{ transform: `rotate(${rot}deg)` }}>
               <div className="washi-tape" style={{ top: '-10px', left: '50%', marginLeft: '-40px' }}></div>
@@ -199,8 +199,8 @@ async function HomepageAlbums({ promise }: { promise: Promise<any[]> }) {
       <div className={styles.expandingGallery}>
         {featuredAlbums.map((album: any) => {
           const coverUrl = album.coverImage || album.photos[0]?.imageData || album.photos[0]?.url || album.children?.find((c: any) => c.photos && c.photos.length > 0)?.photos?.[0]?.url;
-          const photoCount = 
-            (album._count?.photos ?? album.photos.length) + 
+          const photoCount =
+            (album._count?.photos ?? album.photos.length) +
             (album.children?.reduce((sum: number, c: any) => sum + (c._count?.photos ?? c.photos?.length ?? 0), 0) ?? 0);
 
           return (
@@ -217,7 +217,7 @@ async function HomepageAlbums({ promise }: { promise: Promise<any[]> }) {
 
               <div className={styles.expandOverlay}>
                 <div className={styles.expandTitleVertical}>{album.name}</div>
-                
+
                 <div className={styles.expandContent}>
                   {photoCount > 0 && (
                     <div className={styles.expandCount}>{photoCount} ảnh</div>
@@ -254,7 +254,7 @@ export default function Home() {
       </Suspense>
 
       <Suspense fallback={<div className="vintage-spinner" style={{ margin: '2rem auto' }} />}>
-        <HomepageStats 
+        <HomepageStats
           photosPromise={totalPhotosPromise}
           albumsPromise={albumsPromise}
           homepagePhotosPromise={homepagePhotosPromise}

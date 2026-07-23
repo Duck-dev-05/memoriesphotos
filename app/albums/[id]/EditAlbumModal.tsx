@@ -9,6 +9,8 @@ export default function EditAlbumModal({ album }: { album: any }) {
   const [name, setName] = useState(album.name);
   const [description, setDescription] = useState(album.description || "");
   const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [isLocked, setIsLocked] = useState(album.isLocked || false);
+  const [lockPasscode, setLockPasscode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
@@ -20,6 +22,10 @@ export default function EditAlbumModal({ album }: { album: any }) {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
+      formData.append("isLocked", isLocked ? "true" : "false");
+      if (lockPasscode) {
+        formData.append("lockPasscode", lockPasscode);
+      }
       if (coverImage) {
         formData.append("coverImage", coverImage);
       }
@@ -98,6 +104,29 @@ export default function EditAlbumModal({ album }: { album: any }) {
                   style={{ width: '100%' }}
                 />
               </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="lock-album-toggle"
+                  checked={isLocked}
+                  onChange={(e) => setIsLocked(e.target.checked)}
+                />
+                <label htmlFor="lock-album-toggle" style={{ fontWeight: 500, cursor: 'pointer' }}>Khóa Album</label>
+              </div>
+
+              {isLocked && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Mật khẩu khóa (Để trống nếu không muốn đổi)</label>
+                  <input 
+                    type="password" 
+                    value={lockPasscode} 
+                    onChange={e => setLockPasscode(e.target.value)} 
+                    placeholder="Nhập mật khẩu mới..."
+                    style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc' }}
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                 <button 

@@ -11,6 +11,7 @@ import SmartFilterGrid from "./SmartFilterGrid";
 import EditAlbumModal from "./EditAlbumModal";
 import ShareButton from "./ShareButton";
 import AutoTagFab from "./AutoTagFab";
+import UnlockAlbumForm from "./UnlockAlbumForm";
 
 export default async function AlbumDetail({
   params,
@@ -25,8 +26,15 @@ export default async function AlbumDetail({
     getSession(),
   ]);
 
-
   if (!album) notFound();
+
+  if (album.needsUnlock) {
+    return (
+      <div className={styles.page}>
+        <UnlockAlbumForm album={album} />
+      </div>
+    );
+  }
 
   const isOwner = session?.userId === album.userId;
 

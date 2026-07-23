@@ -33,6 +33,8 @@ model Album {
   parentId        String?
   deletedAt       DateTime?
   isPublic        Boolean   @default(false)
+  isLocked        Boolean   @default(false)
+  lockPasscode    String?
   shareToken      String?   @unique
   isCollaborative Boolean   @default(false)
   parent          Album?    @relation("AlbumToAlbum", fields: [parentId], references: [id], onDelete: Cascade)
