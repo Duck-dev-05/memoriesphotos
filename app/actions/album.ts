@@ -229,6 +229,20 @@ export async function getAlbums() {
   return albums;
 }
 
+async function getAllDescendantAlbumIds(albumId: string): Promise<string[]> {
+  const children = await prisma.album.findMany({
+    where: { parentId: albumId, deletedAt: null },
+    select: { id: true },
+  });
+  let ids: string[] = [];
+  for (const child of children) {
+    ids.push(child.id);
+    const subIds = await getAllDescendantAlbumIds(child.id);
+    ids = ids.concat(subIds);
+  }
+  return ids;
+}
+
 export async function getAlbum(id: string) {
   const session = await getSession();
 
@@ -305,6 +319,21 @@ export async function getAlbum(id: string) {
         coverImage: album.coverImage
       };
     }
+  }
+
+  // Include photos from all descendant subfolders
+  const descendantIds = await getAllDescendantAlbumIds(id);
+  if (descendantIds.length > 0) {
+    const allAlbumIds = [id, ...descendantIds];
+    const allPhotos = await prisma.photo.findMany({
+      where: {
+        albumId: { in: allAlbumIds },
+        deletedAt: null,
+      },
+      orderBy: { createdAt: "desc" },
+      include: { tags: true },
+    });
+    (album as any).photos = allPhotos;
   }
 
   await setCache(cacheKey, album);

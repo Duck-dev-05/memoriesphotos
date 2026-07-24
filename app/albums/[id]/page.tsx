@@ -56,7 +56,7 @@ export default async function AlbumDetail({
     ) ?? 0;
   const totalPhotos = photosInAlbum + childrenPhotoCount;
 
-  // Only show photos directly in this album (do not aggregate from children)
+  // Aggregate photos from this main album and all nested subfolders
   const allPhotosMap = new Map<string, any>();
   album.photos.forEach((p: any) => allPhotosMap.set(p.id, p));
   const allPhotos = Array.from(allPhotosMap.values()).sort((a, b) => 
