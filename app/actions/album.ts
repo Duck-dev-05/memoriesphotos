@@ -264,7 +264,9 @@ export async function getAlbum(id: string) {
 
   const cacheKey = session ? `user:${session.userId}:album:${id}` : `public:album:${id}`;
   const cached = await getCache<any>(cacheKey);
-  if (cached) return cached;
+  if (cached && (cached._hasAggregatedSubfolderPhotos || (!cached.children || cached.children.length === 0))) {
+    return cached;
+  }
 
   const album = await prisma.album.findUnique({
     where: { id },
@@ -350,6 +352,7 @@ export async function getAlbum(id: string) {
     });
     (album as any).photos = allPhotos;
   }
+  (album as any)._hasAggregatedSubfolderPhotos = true;
 
   await setCache(cacheKey, album);
   return album;

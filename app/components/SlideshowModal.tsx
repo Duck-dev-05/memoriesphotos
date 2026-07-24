@@ -42,6 +42,15 @@ export default function SlideshowModal({ photos, initialIndex = 0, onClose, albu
   const imageUrl = getSafeUrl(rawSrc);
   const isVideo = Boolean(rawSrc?.match(/\.(mp4|webm|ogg|mov)$/i));
 
+  // Lock body scroll while slideshow is active
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Auto-advance timer
   useEffect(() => {
     if (!isPlaying) return;
@@ -127,7 +136,7 @@ export default function SlideshowModal({ photos, initialIndex = 0, onClose, albu
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 99999,
+        zIndex: 2000000,
         background: '#000',
         display: 'flex',
         flexDirection: 'column',
