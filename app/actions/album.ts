@@ -342,3 +342,32 @@ export async function unlockAlbumAction(id: string, passcode: string) {
   return { success: true };
 }
 
+export async function movePhotosToAlbum(photoIds: string[], targetAlbumId: string | null) {
+  const session = await checkAuthServerAction();
+  if (!photoIds || photoIds.length === 0) return { success: false, error: "No photos specified" };
+
+  const cleanTargetId = (targetAlbumId && targetAlbumId.trim()) ? targetAlbumId.trim() : null;
+
+  if (cleanTargetId) {
+    const album = await prisma.album.findUnique({ where: { id: cleanTargetId } });
+    if (!album || album.userId !== session.userId) {
+      throw new Error("Target album not found or unauthorized");
+    }
+  }
+
+  await prisma.photo.updateMany({
+    where: {
+      id: { in: photoIds },
+      userId: session.userId,
+    },
+    data: {
+      albumId: cleanTargetId,
+    },
+  });
+
+  await clearUserCache(session.userId);
+  revalidatePath("/albums", "layout");
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+

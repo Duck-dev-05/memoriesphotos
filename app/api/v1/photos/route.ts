@@ -57,3 +57,47 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message || "Unauthorized" }, { status: 401 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const session = await checkApiAuth(request);
+    const body = await request.json();
+    const { photoIds, targetAlbumId, albumId } = body;
+
+    const ids = photoIds || (body.photoId ? [body.photoId] : []);
+    const destAlbumId = targetAlbumId !== undefined ? targetAlbumId : albumId;
+
+    if (!ids || ids.length === 0) {
+      return NextResponse.json({ error: "No photoIds specified" }, { status: 400 });
+    }
+
+    const cleanTargetId = (destAlbumId && String(destAlbumId).trim()) ? String(destAlbumId).trim() : null;
+
+    if (cleanTargetId) {
+      const album = await prisma.album.findUnique({ where: { id: cleanTargetId } });
+      if (!album || album.userId !== session.userId) {
+        return NextResponse.json({ error: "Target album not found or unauthorized" }, { status: 404 });
+      }
+    }
+
+    await prisma.photo.updateMany({
+      where: {
+        id: { in: ids },
+        userId: session.userId,
+      },
+      data: {
+        albumId: cleanTargetId,
+      },
+    });
+
+    await clearUserCache(session.userId);
+    return NextResponse.json({ success: true, count: ids.length });
+  } catch (error: any) {
+    console.error("PUT Photos API error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  return PUT(request);
+}

@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
@@ -26,22 +26,22 @@ model User {
 }
 
 model Album {
-  id              String    @id @default(cuid())
+  id              String       @id @default(cuid())
   name            String
   description     String?
   coverImage      String?
-  createdAt       DateTime  @default(now())
+  createdAt       DateTime     @default(now())
   userId          String?
   parentId        String?
   deletedAt       DateTime?
-  isPublic        Boolean   @default(false)
-  isLocked        Boolean   @default(false)
+  isPublic        Boolean      @default(false)
+  isLocked        Boolean      @default(false)
   lockPasscode    String?
-  shareToken      String?   @unique
-  isCollaborative Boolean   @default(false)
-  parent          Album?    @relation("AlbumToAlbum", fields: [parentId], references: [id], onDelete: Cascade)
-  children        Album[]   @relation("AlbumToAlbum")
-  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shareToken      String?      @unique
+  isCollaborative Boolean      @default(false)
+  parent          Album?       @relation("AlbumToAlbum", fields: [parentId], references: [id], onDelete: Cascade)
+  children        Album[]      @relation("AlbumToAlbum")
+  user            User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos          Photo[]
   albumShares     AlbumShare[]
 }
@@ -173,8 +173,8 @@ model AlbumShare {
   role      String   @default("VIEWER")
   createdAt DateTime @default(now())
 
-  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([albumId, userId])
 }
