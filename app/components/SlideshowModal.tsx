@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Maximize2, Minimize2, X, Music, Clock } from 'lucide-react';
 import { ambientSynth } from '@/lib/ambientSynth';
+import { getSafeUrl, getOptimizedMediaUrl } from '@/lib/media';
 
 interface Photo {
   id: string;
   url?: string | null;
   cloudUrl?: string | null;
+  imageData?: string | null;
   altText?: string | null;
 }
 
@@ -36,7 +38,9 @@ export default function SlideshowModal({ photos, initialIndex = 0, onClose, albu
   if (photos.length === 0) return null;
 
   const currentPhoto = photos[currentIndex];
-  const imageUrl = currentPhoto?.url || currentPhoto?.cloudUrl || '';
+  const rawSrc = currentPhoto?.imageData || currentPhoto?.url || currentPhoto?.cloudUrl || '';
+  const imageUrl = getSafeUrl(rawSrc);
+  const isVideo = Boolean(rawSrc?.match(/\.(mp4|webm|ogg|mov)$/i));
 
   // Auto-advance timer
   useEffect(() => {
@@ -194,15 +198,30 @@ export default function SlideshowModal({ photos, initialIndex = 0, onClose, albu
           style={{ width: '100vw', height: '100vh', position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={currentPhoto?.altText || "Slide"}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain'
-              }}
-            />
+            isVideo ? (
+              <video
+                src={getOptimizedMediaUrl(rawSrc)}
+                autoPlay
+                muted
+                loop
+                playsInline
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain'
+                }}
+              />
+            ) : (
+              <img
+                src={imageUrl}
+                alt={currentPhoto?.altText || "Slide"}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain'
+                }}
+              />
+            )
           ) : (
             <div style={{ color: '#fff', fontSize: '1.5rem' }}>Ảnh không khả dụng</div>
           )}

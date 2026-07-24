@@ -105,76 +105,78 @@ export default function SmartFilterGrid({
   return (
     <>
       {/* ── Toolbar ─────────────────────────── */}
-      {isAuth && (
-        <div style={{ marginBottom: "2rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-          {/* Tag filters */}
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", flex: 1 }}>
+      <div style={{ marginBottom: "2rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+        {/* Tag filters */}
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", flex: 1 }}>
+          <button
+            onClick={() => setActiveFilter("all")}
+            className={styles.filterBtn}
+            style={activeFilter === "all" ? { background: "var(--text-primary)", color: "var(--bg-primary)", borderColor: "var(--text-primary)" } : {}}
+          >
+            Tất cả
+          </button>
+          {availableTags.slice(0, 8).map(tag => (
             <button
-              onClick={() => setActiveFilter("all")}
+              key={tag}
+              onClick={() => setActiveFilter(tag)}
               className={styles.filterBtn}
-              style={activeFilter === "all" ? { background: "var(--text-primary)", color: "var(--bg-primary)", borderColor: "var(--text-primary)" } : {}}
+              style={activeFilter === tag ? { background: "var(--accent-1)", color: "white", borderColor: "var(--accent-1)" } : {}}
             >
-              Tất cả
+              {tag === "person" ? "👤 Người" : `#${tag}`}
             </button>
-            {availableTags.slice(0, 8).map(tag => (
-              <button
-                key={tag}
-                onClick={() => setActiveFilter(tag)}
-                className={styles.filterBtn}
-                style={activeFilter === tag ? { background: "var(--accent-1)", color: "white", borderColor: "var(--accent-1)" } : {}}
-              >
-                {tag === "person" ? "👤 Người" : `#${tag}`}
-              </button>
-            ))}
-          </div>
-
-          {/* Action buttons */}
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <button
-              onClick={() => setIsSlideshowOpen(true)}
-              className={styles.filterBtn}
-              style={{ background: "var(--accent-1)", color: "white", borderColor: "var(--accent-1)", display: "flex", alignItems: "center", gap: "6px" }}
-            >
-              <Play size={13} fill="white" />
-              Trình chiếu (Windows 7)
-            </button>
-
-            {isSelectionMode && filteredPhotos.length > 0 && (
-              <button
-                onClick={handleSelectAll}
-                className={styles.filterBtn}
-                style={{ fontSize: "0.8rem" }}
-              >
-                {allSelected ? "Bỏ chọn tất cả" : `Chọn tất cả (${filteredPhotos.length})`}
-              </button>
-            )}
-
-            <button
-              onClick={toggleSelectionMode}
-              className={styles.filterBtn}
-              style={isSelectionMode
-                ? { background: "var(--text-primary)", color: "var(--bg-primary)", borderColor: "var(--text-primary)" }
-                : {}}
-            >
-              {isSelectionMode ? (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline", marginRight: "4px" }}>
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                  Hủy chọn
-                </>
-              ) : (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline", marginRight: "4px" }}>
-                    <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                  </svg>
-                  Chọn nhiều
-                </>
-              )}
-            </button>
-          </div>
+          ))}
         </div>
-      )}
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <button
+            onClick={() => setIsSlideshowOpen(true)}
+            className={styles.filterBtn}
+            style={{ background: "var(--accent-1)", color: "white", borderColor: "var(--accent-1)", display: "flex", alignItems: "center", gap: "6px" }}
+          >
+            <Play size={13} fill="white" />
+            Trình chiếu (Windows 7)
+          </button>
+
+          {isAuth && (
+            <>
+              {isSelectionMode && filteredPhotos.length > 0 && (
+                <button
+                  onClick={handleSelectAll}
+                  className={styles.filterBtn}
+                  style={{ fontSize: "0.8rem" }}
+                >
+                  {allSelected ? "Bỏ chọn tất cả" : `Chọn tất cả (${filteredPhotos.length})`}
+                </button>
+              )}
+
+              <button
+                onClick={toggleSelectionMode}
+                className={styles.filterBtn}
+                style={isSelectionMode
+                  ? { background: "var(--text-primary)", color: "var(--bg-primary)", borderColor: "var(--text-primary)" }
+                  : {}}
+              >
+                {isSelectionMode ? (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline", marginRight: "4px" }}>
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Hủy chọn
+                  </>
+                ) : (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline", marginRight: "4px" }}>
+                      <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    Chọn nhiều
+                  </>
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       {isSlideshowOpen && filteredPhotos.length > 0 && (
         <SlideshowModal
