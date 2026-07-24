@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 export async function GET(request: Request) {
   try {
     const session = await checkApiAuth(request);
+
+    const rateLimit = await checkRateLimit(`api:photos:${session.userId}`, 60, 60);
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
     const url = new URL(request.url);
     const albumId = url.searchParams.get("albumId");
     const passcode = url.searchParams.get("passcode") || request.headers.get("X-Album-Passcode");

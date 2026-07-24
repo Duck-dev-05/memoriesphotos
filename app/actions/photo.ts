@@ -255,6 +255,54 @@ export async function deletePhotosBulk(ids: string[]) {
   albumIds.forEach(id => revalidatePath(`/albums/${id}`, "layout"));
 }
 
+export async function updatePhotosBulk(ids: string[], updates: { altText?: string; description?: string; tags?: string }) {
+  const session = await checkAuthServerAction();
+
+  const photosCheck = await prisma.photo.findMany({
+    where: {
+      id: { in: ids },
+      userId: session.userId,
+      deletedAt: null
+    }
+  });
+
+  if (photosCheck.length === 0) return;
+
+  const updateData: any = {};
+  if (updates.altText !== undefined && updates.altText.trim() !== "") {
+    updateData.altText = updates.altText.trim();
+  }
+  if (updates.description !== undefined && updates.description.trim() !== "") {
+    updateData.description = updates.description.trim();
+  }
+
+  if (updates.tags && updates.tags.trim()) {
+    const parsedTags = updates.tags.split(",").map(t => t.trim()).filter(Boolean);
+    const tagConnectOrCreate = parsedTags.map((tag) => ({
+      where: { name: tag },
+      create: { name: tag },
+    }));
+    updateData.tags = {
+      connectOrCreate: tagConnectOrCreate
+    };
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await Promise.all(
+      photosCheck.map(p =>
+        prisma.photo.update({
+          where: { id: p.id },
+          data: updateData
+        })
+      )
+    );
+  }
+
+  await clearUserCache(session.userId);
+  revalidatePath("/", "layout");
+  revalidatePath("/albums", "layout");
+}
+
 export async function restorePhoto(id: string) {
   const session = await checkAuthServerAction();
 
