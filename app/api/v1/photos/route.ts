@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkApiAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { clearUserCache } from "@/lib/redis";
 
 export async function GET(request: Request) {
   try {
