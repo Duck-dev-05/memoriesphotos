@@ -56,9 +56,18 @@ export default async function AlbumDetail({
     ) ?? 0;
   const totalPhotos = photosInAlbum + childrenPhotoCount;
 
-  // Aggregate photos from this main album and all nested subfolders
+  // Aggregate photos from this main album and all nested child albums
   const allPhotosMap = new Map<string, any>();
-  album.photos.forEach((p: any) => allPhotosMap.set(p.id, p));
+  if (album.photos) {
+    album.photos.forEach((p: any) => allPhotosMap.set(p.id, p));
+  }
+  if (album.children) {
+    album.children.forEach((child: any) => {
+      if (child.photos) {
+        child.photos.forEach((p: any) => allPhotosMap.set(p.id, p));
+      }
+    });
+  }
   const allPhotos = Array.from(allPhotosMap.values()).sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );

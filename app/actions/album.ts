@@ -230,15 +230,31 @@ export async function getAlbums() {
 }
 
 async function getAllDescendantAlbumIds(albumId: string): Promise<string[]> {
+  const album = await prisma.album.findUnique({
+    where: { id: albumId },
+    select: { id: true, name: true, userId: true },
+  });
+
   const children = await prisma.album.findMany({
-    where: { parentId: albumId, deletedAt: null },
+    where: {
+      deletedAt: null,
+      OR: [
+        { parentId: albumId },
+        album?.name ? { name: { startsWith: album.name + " " }, userId: album.userId || undefined } : { parentId: albumId }
+      ]
+    },
     select: { id: true },
   });
+
   let ids: string[] = [];
   for (const child of children) {
-    ids.push(child.id);
-    const subIds = await getAllDescendantAlbumIds(child.id);
-    ids = ids.concat(subIds);
+    if (child.id !== albumId && !ids.includes(child.id)) {
+      ids.push(child.id);
+      const subIds = await getAllDescendantAlbumIds(child.id);
+      for (const subId of subIds) {
+        if (!ids.includes(subId)) ids.push(subId);
+      }
+    }
   }
   return ids;
 }
@@ -264,7 +280,6 @@ export async function getAlbum(id: string) {
         include: {
           photos: {
             where: { deletedAt: null },
-            take: 1,
             orderBy: { createdAt: "desc" },
             include: { tags: true },
           },
