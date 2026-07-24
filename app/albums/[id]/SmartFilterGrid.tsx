@@ -7,7 +7,9 @@ import { getOptimizedMediaUrl, getSafeUrl } from "@/lib/media";
 import styles from "./page.module.css";
 import { useSelection } from "@/app/contexts/SelectionContext";
 import SelectablePhoto from "@/app/components/SelectablePhoto";
+import SlideshowModal from "@/app/components/SlideshowModal";
 import { useRouter } from "next/navigation";
+import { Play } from "lucide-react";
 
 interface Album { id: string; name: string; }
 
@@ -25,6 +27,7 @@ export default function SmartFilterGrid({
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState("");
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
   const { isSelectionMode, toggleSelectionMode, isSelected, togglePhoto, selectedPhotos } = useSelection();
   const router = useRouter();
 
@@ -127,6 +130,15 @@ export default function SmartFilterGrid({
 
           {/* Action buttons */}
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <button
+              onClick={() => setIsSlideshowOpen(true)}
+              className={styles.filterBtn}
+              style={{ background: "var(--accent-1)", color: "white", borderColor: "var(--accent-1)", display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <Play size={13} fill="white" />
+              Trình chiếu (Windows 7)
+            </button>
+
             {isSelectionMode && filteredPhotos.length > 0 && (
               <button
                 onClick={handleSelectAll}
@@ -162,6 +174,14 @@ export default function SmartFilterGrid({
             </button>
           </div>
         </div>
+      )}
+
+      {isSlideshowOpen && filteredPhotos.length > 0 && (
+        <SlideshowModal
+          photos={filteredPhotos}
+          albumName="Album"
+          onClose={() => setIsSlideshowOpen(false)}
+        />
       )}
 
       {filteredPhotos.length === 0 ? (
